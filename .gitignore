@@ -1,0 +1,53 @@
+### Java / Maven ###
+backend/target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.m2/
+
+### Node / npm / TypeScript ###
+frontend/dist/
+frontend/.vite/
+**/dist/
+**/build/
+**/node_modules/
+*.tsbuildinfo
+.npm/
+.eslintcache
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.turbo/
+coverage/
+
+### Env / Secrets ###
+.env
+.env.local
+.env.*.local
+*.pem
+
+### Logs ###
+*.log
+logs/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### IDEs ###
+.idea/
+*.iml
+.vscode/
+!.vscode/extensions.json
+.omc
+
+### project specific ###
+backend/data/*

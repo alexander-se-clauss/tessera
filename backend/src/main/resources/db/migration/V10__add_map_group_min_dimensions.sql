@@ -1,0 +1,3 @@
+ALTER TABLE map_groups
+    ADD COLUMN min_cols INT NOT NULL DEFAULT 4,
+    ADD COLUMN min_rows INT NOT NULL DEFAULT 4;

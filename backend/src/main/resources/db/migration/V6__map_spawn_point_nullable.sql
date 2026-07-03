@@ -1,0 +1,1 @@
+ALTER TABLE game_map ALTER COLUMN spawn_point DROP NOT NULL;

@@ -1,0 +1,4 @@
+ALTER TABLE game_map ADD COLUMN map_type VARCHAR(20) NOT NULL DEFAULT 'area';
+ALTER TABLE game_map ADD COLUMN parent_map_id BIGINT REFERENCES game_map(id) ON DELETE SET NULL;
+ALTER TABLE game_map ADD COLUMN overworld_position JSONB;
+ALTER TABLE project ADD COLUMN overworld_id BIGINT REFERENCES game_map(id) ON DELETE SET NULL;
