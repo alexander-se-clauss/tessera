@@ -348,12 +348,11 @@ public class EditorController {
             Principal principal,
             @RequestParam String name,
             @RequestParam String assetType,
-            @RequestParam(required = false) String accessToken,
             @RequestParam("file") MultipartFile file
     ) {
         return assetImportService.createImport(
                 projectId,
-                resolveUsername(principal, null, accessToken),
+                principal.getName(),
                 name,
                 AssetType.fromValue(assetType),
                 file

@@ -54,7 +54,7 @@ A browser-based tile map editor for 2D games. Create projects, import tilesets, 
 docker compose up postgres
 ```
 
-3. Run the backend from your IDE or locally with the same database settings from `backend/.env`.
+3. Run the backend from your IDE or locally. The default local database settings are in `backend/src/main/resources/application.properties`; override them with environment variables if your PostgreSQL setup differs.
 4. In another terminal, start the frontend:
 
 ```bash

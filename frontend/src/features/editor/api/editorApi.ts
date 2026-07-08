@@ -214,9 +214,6 @@ export const editorApi = createApi({
         const formData = new FormData()
         formData.append('name', name)
         formData.append('assetType', assetType)
-        if (token) {
-          formData.append('accessToken', token)
-        }
         formData.append('file', file)
 
         try {

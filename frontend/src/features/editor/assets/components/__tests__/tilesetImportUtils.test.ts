@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
   tilesFromTileset,
+  normalizeGroupList,
   applyTilesToLayout,
   normalizeLayout,
   moveLayoutItem,
 } from '../tilesetImportUtils'
 import type { Tileset, TilesetTile } from '../../../model/types'
+import type { GroupDraft } from '../types'
 
 // --- Fixtures ---
 
@@ -39,6 +41,34 @@ function makeLayout(tileIds: number[], width: number, height: number) {
   }))
   return { tileRefs, metadata: { width, height } }
 }
+
+// --- normalizeGroupList ---
+
+describe('normalizeGroupList', () => {
+  it('does not add an Objects group when none exists', () => {
+    const groups: GroupDraft[] = [{
+      id: 'terrain',
+      name: 'Terrain',
+      type: 'environment',
+      tileRefs: [],
+      metadata: { width: 1, height: 1, tileType: 'floor' },
+    }]
+
+    expect(normalizeGroupList(groups)).toEqual(groups)
+  })
+
+  it('preserves an existing Objects group', () => {
+    const groups: GroupDraft[] = [{
+      id: 'objects',
+      name: 'Objects',
+      type: 'environment',
+      tileRefs: [{ tileId: 1, x: 0, y: 0 }],
+      metadata: { width: 1, height: 1, tileType: 'object', systemRole: 'objects' },
+    }]
+
+    expect(normalizeGroupList(groups)).toEqual(groups)
+  })
+})
 
 // --- tilesFromTileset ---
 

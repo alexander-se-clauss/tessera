@@ -22,7 +22,7 @@ export function createObjectsGroup(tileRefs: TileRef[] = []): GroupDraft {
   }
 }
 
-export function ensureObjectsGroup(groups: GroupDraft[]): GroupDraft[] {
+export function normalizeGroupList(groups: GroupDraft[]): GroupDraft[] {
   return groups
 }
 
@@ -164,7 +164,7 @@ export function groupsFromTileset(tileset: Tileset, tiles: ExtractedTile[]): Gro
     .filter((group) => group.tileRefs.length > 0)
 
   if (existingGroups.length > 0) {
-    return ensureObjectsGroup(existingGroups)
+    return normalizeGroupList(existingGroups)
   }
 
   const byGroupName = new Map<string, GroupDraft>()
@@ -195,7 +195,7 @@ export function groupsFromTileset(tileset: Tileset, tiles: ExtractedTile[]): Gro
     byGroupName.set(groupName, group)
   }
 
-  return ensureObjectsGroup(Array.from(byGroupName.values()))
+  return normalizeGroupList(Array.from(byGroupName.values()))
 }
 
 function mergeReconstructedAnimationOverrides(
