@@ -40,7 +40,7 @@ export function objectTypeForTile(objectTypes: ObjectType[], tilesetId: number |
   const matches = objectTypes.filter((candidate) => (
     tilesetId != null &&
     candidate.tilesetId === tilesetId &&
-    candidate.config.visual.tileIndex === tileIndex
+    candidate.config?.visual?.tileIndex === tileIndex
   ))
   return matches.find((candidate) => candidate.config.defaultSolid) ?? matches.at(-1) ?? null
 }
@@ -48,8 +48,8 @@ export function objectTypeForTile(objectTypes: ObjectType[], tilesetId: number |
 export function findObjectAtCell(objects: MapObject[], objectTypes: ObjectType[], x: number, y: number) {
   return [...objects].reverse().find((object) => {
     const objectType = objectTypes.find((candidate) => String(candidate.id) === String(object.objectTypeId))
-    const spanX = objectType?.config.visual.spanX ?? objectType?.spanX ?? 1
-    const spanY = objectType?.config.visual.spanY ?? objectType?.spanY ?? 1
+    const spanX = objectType?.config?.visual?.spanX ?? objectType?.spanX ?? 1
+    const spanY = objectType?.config?.visual?.spanY ?? objectType?.spanY ?? 1
     return x >= object.x && x < object.x + spanX && y >= object.y && y < object.y + spanY
   }) ?? null
 }
