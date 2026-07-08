@@ -2,6 +2,7 @@ import { Box, Button, List, ListItemButton, ToggleButton, ToggleButtonGroup, Typ
 import { useMemo, useState } from 'react'
 import { AppDialog, dialogCancelButtonSx } from '../AppDialog'
 import type { Tileset } from '../../model/types'
+import { editorTokens } from '../../../../app/theme'
 
 type TilesetTypeFilter = 'all' | 'background' | 'object'
 
@@ -47,7 +48,7 @@ export function AssetChooserDialog({
             onChange={(_event, value: TilesetTypeFilter | null) => { if (value) setTilesetFilter(value) }}
             sx={{
               '& .MuiToggleButton-root': {
-                height: 30,
+                height: editorTokens.control.heightCompact,
                 px: 1.5,
                 borderColor: 'rgba(255,255,255,0.10)',
                 color: '#8f9baa',
