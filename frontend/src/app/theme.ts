@@ -57,6 +57,12 @@ export const editorTokens = {
     menu: '0 18px 48px rgba(0,0,0,0.38)',
     primaryButton: '0 8px 22px rgba(73,145,238,0.25)',
   },
+  // Shared interactive-control sizing (dialog footer buttons, compact toolbar controls).
+  control: {
+    height: 34,
+    heightCompact: 30,
+    radius: 5,
+  },
 } as const
 
 // Palette for auth pages and the public landing page
@@ -133,7 +139,7 @@ export const editorTheme = createTheme({
     },
   },
   shape: {
-    borderRadius: 10,
+    borderRadius: editorTokens.radius.control,
   },
   palette: {
     mode: 'dark',
@@ -240,10 +246,10 @@ export const editorTheme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#0f151d',
+          backgroundColor: editorTokens.surface.body,
           color: '#e6edf3',
-          borderRadius: '12px',
-          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: `${editorTokens.radius.row}px`,
+          border: `1px solid ${editorTokens.border.colorMid}`,
           boxShadow: '0 24px 80px rgba(0,0,0,0.65)',
           backgroundImage: 'none',
         },
@@ -261,7 +267,7 @@ export const editorTheme = createTheme({
           alignItems: 'center',
           minHeight: 48,
           color: '#c9d1d9',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          borderBottom: editorTokens.border.default,
         },
       },
     },
@@ -270,7 +276,7 @@ export const editorTheme = createTheme({
         root: {
           padding: '16px 24px',
           '&.MuiDialogContent-dividers': {
-            borderColor: 'rgba(255,255,255,0.06)',
+            borderColor: editorTokens.border.colorDefault,
             padding: '16px 24px',
           },
         },
@@ -280,7 +286,7 @@ export const editorTheme = createTheme({
       styleOverrides: {
         root: {
           padding: '10px 24px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          borderTop: editorTokens.border.default,
           '& .MuiButton-root': {
             textTransform: 'none',
             lineHeight: 1.2,

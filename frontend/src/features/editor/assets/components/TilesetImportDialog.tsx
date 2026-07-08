@@ -7,6 +7,7 @@ import { TilesetOrganizeCollisionStep } from './TilesetOrganizeCollisionStep'
 import { slotForTileIndex } from './tilesetImportUtils'
 import type { TilesetImportDialogProps } from './types'
 import { useTilesetImport } from './useTilesetImport'
+import { editorTokens } from '../../../../app/theme'
 
 export function TilesetImportDialog(props: TilesetImportDialogProps) {
   const {
@@ -226,9 +227,9 @@ function ImportCanvasToolbar({
         component="label"
         size="small"
         sx={{
-          height: 30,
+          height: editorTokens.control.heightCompact,
           px: 1.25,
-          borderRadius: '5px',
+          borderRadius: `${editorTokens.control.radius}px`,
           border: '1px solid rgba(255,255,255,0.10)',
           color: file ? '#d6dee8' : '#8f9baa',
           textTransform: 'none',

@@ -2,12 +2,13 @@ import CloseIcon from '@mui/icons-material/Close'
 import { Box, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Tooltip } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
 import type { ReactNode } from 'react'
+import { editorTokens } from '../../../app/theme'
 
 export const dialogPrimaryButtonSx: SxProps<Theme> = {
   fontWeight: 500,
   px: 2,
-  height: 34,
-  borderRadius: '5px',
+  height: editorTokens.control.height,
+  borderRadius: `${editorTokens.control.radius}px`,
   bgcolor: 'rgba(93,158,255,0.16)',
   border: '1px solid rgba(93,158,255,0.22)',
   color: '#79b8ff',
@@ -17,20 +18,20 @@ export const dialogPrimaryButtonSx: SxProps<Theme> = {
 }
 
 export const dialogSecondaryButtonSx: SxProps<Theme> = {
-  height: 34,
+  height: editorTokens.control.height,
   px: 1.75,
   bgcolor: 'transparent',
   border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: '5px',
+  borderRadius: `${editorTokens.control.radius}px`,
   color: '#8b949e',
   '&:hover': { bgcolor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.12)' },
 }
 
 export const dialogCancelButtonSx: SxProps<Theme> = {
-  height: 34,
+  height: editorTokens.control.height,
   px: 1.75,
   color: '#6a737d',
-  borderRadius: '5px',
+  borderRadius: `${editorTokens.control.radius}px`,
   '&:hover': { color: '#8b949e', background: 'rgba(255,255,255,0.04)' },
 }
 
