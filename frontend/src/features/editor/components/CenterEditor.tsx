@@ -213,13 +213,21 @@ function tilesetMode(tileset: Tileset): 'background' | 'object' {
   return (tileset.type ?? tileset.metadata?.type) === 'object' ? 'object' : 'background'
 }
 
-function sortGroups(groups: Tileset['groups']) {
-  return [...groups].sort((left, right) => Number(left.orderIndex ?? 0) - Number(right.orderIndex ?? 0))
+function tilesetGroups(tileset: Tileset | null | undefined) {
+  return tileset?.groups ?? []
+}
+
+function sortGroups(groups: Tileset['groups'] | null | undefined) {
+  return [...(groups ?? [])].sort((left, right) => Number(left.orderIndex ?? 0) - Number(right.orderIndex ?? 0))
+}
+
+function objectTypeTileIndex(objectType: ObjectType | null | undefined) {
+  return objectType?.config?.visual?.tileIndex ?? null
 }
 
 function BackgroundSubmenu({ activeTileset, selectedTileIndex, onSelectTile }: CenterEditorProps) {
   if (activeTileset?.tileMap && Object.keys(activeTileset.tileMap).length > 0) {
-    const terrainGroups = sortGroups(activeTileset.groups.filter((group) => !isObjectGroup(group)))
+    const terrainGroups = sortGroups(tilesetGroups(activeTileset).filter((group) => !isObjectGroup(group)))
     return (
       <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 1, py: 0.5 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 1, mb: 0.5 }}>
@@ -238,9 +246,9 @@ function BackgroundSubmenu({ activeTileset, selectedTileIndex, onSelectTile }: C
   }
   const realTiles = activeTileset?.tiles ?? []
   const tileByExtractedId = new Map(realTiles.map((tile) => [tile.extractedTileId, tile]))
-  const terrainGroups = sortGroups(activeTileset?.groups.filter((group) => !isObjectGroup(group)) ?? [])
+  const terrainGroups = sortGroups(tilesetGroups(activeTileset).filter((group) => !isObjectGroup(group)) ?? [])
   const groupedExtractedIds = new Set(terrainGroups.flatMap((group) => (group.tileRefs ?? []).map((ref) => ref.tileId)))
-  const objectExtractedIds = new Set(activeTileset?.groups.filter(isObjectGroup).flatMap((group) => (group.tileRefs ?? []).map((ref) => ref.tileId)) ?? [])
+  const objectExtractedIds = new Set(tilesetGroups(activeTileset).filter(isObjectGroup).flatMap((group) => (group.tileRefs ?? []).map((ref) => ref.tileId)) ?? [])
   const unassignedTiles = realTiles.filter((tile) => !groupedExtractedIds.has(tile.extractedTileId) && !objectExtractedIds.has(tile.extractedTileId))
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 1, py: 0.5 }}>
@@ -508,9 +516,9 @@ function ComposedTileThumbnail({
 function ObjectsSubmenu({ activeTileset, selectedTileIndex, selectedObjectTypeId, objectTypes, onSelectTile, onSelectObjectType }: CenterEditorProps) {
   const activeTilesetIsObject = activeTileset ? tilesetMode(activeTileset) === 'object' : false
   if (activeTileset?.tileMap && Object.keys(activeTileset.tileMap).length > 0) {
-    const objectGroups = sortGroups(activeTilesetIsObject ? activeTileset.groups : activeTileset.groups.filter(isObjectGroup))
+    const objectGroups = sortGroups(activeTilesetIsObject ? tilesetGroups(activeTileset) : tilesetGroups(activeTileset).filter(isObjectGroup))
     const selectedObjectType = objectTypes.find((objectType) => String(objectType.id) === String(selectedObjectTypeId))
-    const selectedObjectTileIndex = selectedTileIndex ?? selectedObjectType?.config.visual.tileIndex ?? null
+    const selectedObjectTileIndex = selectedTileIndex ?? objectTypeTileIndex(selectedObjectType)
     return (
       <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 1, py: 0.75 }}>
         {objectGroups.length > 0 ? (
@@ -540,7 +548,7 @@ function ObjectsSubmenu({ activeTileset, selectedTileIndex, selectedObjectTypeId
   }
   const realTiles = activeTileset?.tiles ?? []
   const tileByExtractedId = new Map(realTiles.map((tile) => [tile.extractedTileId, tile]))
-  const objectGroups = sortGroups(activeTilesetIsObject ? activeTileset?.groups ?? [] : activeTileset?.groups.filter(isObjectGroup) ?? [])
+  const objectGroups = sortGroups(activeTilesetIsObject ? tilesetGroups(activeTileset) ?? [] : tilesetGroups(activeTileset).filter(isObjectGroup) ?? [])
   const objectTileIds = new Set(objectGroups.flatMap((group) => (group.tileRefs ?? []).map((ref) => ref.tileId)))
   const objectGroupTileIndices = new Set(
     objectGroups.flatMap((group) =>
@@ -554,7 +562,7 @@ function ObjectsSubmenu({ activeTileset, selectedTileIndex, selectedObjectTypeId
   )
   const objectTypeTiles = objectTypes
     .filter((objectType) => activeTileset && objectType.tilesetId === activeTileset.id)
-    .map((objectType) => realTiles.find((tile) => tile.index === objectType.config.visual.tileIndex))
+    .map((objectType) => realTiles.find((tile) => objectTypeTileIndex(objectType) === tile.index))
     .filter((tile): tile is Tileset['tiles'][number] => Boolean(tile))
     .filter((tile, index, tiles) => (
       !objectTileIds.has(tile.extractedTileId) &&
@@ -568,7 +576,7 @@ function ObjectsSubmenu({ activeTileset, selectedTileIndex, selectedObjectTypeId
         tiles.findIndex((candidate) => candidate.index === tile.index) === index
       ))
   const selectedObjectType = objectTypes.find((objectType) => String(objectType.id) === String(selectedObjectTypeId))
-  const selectedObjectTileIndex = selectedTileIndex ?? selectedObjectType?.config.visual.tileIndex ?? null
+  const selectedObjectTileIndex = selectedTileIndex ?? objectTypeTileIndex(selectedObjectType)
 
   return (
     <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 1, py: 0.75 }}>
@@ -600,7 +608,7 @@ function ObjectsSubmenu({ activeTileset, selectedTileIndex, selectedObjectTypeId
             <TileThumbnail
               key={`object-${tile.index}`}
               imageUrl={tile.imageUrl}
-              selected={selectedTileIndex === tile.index || objectTypes.some((objectType) => String(objectType.id) === String(selectedObjectTypeId) && objectType.config.visual.tileIndex === tile.index)}
+              selected={selectedTileIndex === tile.index || objectTypes.some((objectType) => String(objectType.id) === String(selectedObjectTypeId) && objectTypeTileIndex(objectType) === tile.index)}
               size={tileSize}
               padding={4}
               onClick={() => {
