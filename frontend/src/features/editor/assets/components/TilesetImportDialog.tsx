@@ -64,7 +64,7 @@ export function TilesetImportDialog(props: TilesetImportDialogProps) {
     void handleUpload()
   }, [handleUpload, props.open, selectedDestinationTilesetId, step])
 
-  const handleAssignSelectedTiles = () => {
+  const handleAssignSelectedTiles = async () => {
     if (!activeGroup || !selectedDestinationTilesetId || !file || organizeSelectedTileIds.length === 0) {
       handleAssignSelectedToGroup()
       return
@@ -84,32 +84,33 @@ export function TilesetImportDialog(props: TilesetImportDialogProps) {
       const occurrence = tile.sourceOccurrences[0]
       if (!occurrence) continue
       const override = tileOverrides[String(tile.id)] ?? {}
-      void assignTileToGroup({
-        projectId: props.projectId,
-        tilesetId: Number(selectedDestinationTilesetId),
-        groupId: activeGroup.id,
-        sourceImage: file,
-        tile: {
-          clientId: String(tile.id),
-          sourceX: occurrence.x + Number(override.sourceOffsetX ?? 0),
-          sourceY: occurrence.y + Number(override.sourceOffsetY ?? 0),
-          width: gridW,
-          height: gridH,
-          blockedColors: override.blockedColors ?? [],
-          deletedPixels: override.deletedPixels ?? [],
-          animated: false,
-          frames: null,
-        },
-      }).unwrap().then((updatedTileset) => {
+      try {
+        const updatedTileset = await assignTileToGroup({
+          projectId: props.projectId,
+          tilesetId: Number(selectedDestinationTilesetId),
+          groupId: activeGroup.id,
+          sourceImage: file,
+          tile: {
+            clientId: String(tile.id),
+            sourceX: occurrence.x + Number(override.sourceOffsetX ?? 0),
+            sourceY: occurrence.y + Number(override.sourceOffsetY ?? 0),
+            width: gridW,
+            height: gridH,
+            blockedColors: override.blockedColors ?? [],
+            deletedPixels: override.deletedPixels ?? [],
+            animated: false,
+            frames: null,
+          },
+        }).unwrap()
         const targetGroup = updatedTileset.groups.find((group) => String(group.id) === String(activeGroup.id))
         const assignedSlot = (targetGroup?.tiles ?? []).find((slot) => !beforeSlots.has(slot))
         if (assignedSlot) {
           beforeSlots.add(assignedSlot)
           handleCommitAssignedTileSlot(tile.id, assignedSlot, updatedTileset)
         }
-      }).catch(() => {
+      } catch {
         // The local optimistic tile remains visible for now; the dialog-level error handling can be wired to per-tile states next.
-      })
+      }
     }
   }
 

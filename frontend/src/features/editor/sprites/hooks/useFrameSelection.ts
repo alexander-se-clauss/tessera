@@ -4,143 +4,107 @@ import type { SpriteFrame } from '../types/sprite'
 export type SelectionMode = 'pan' | 'single' | 'drag' | 'free' | 'eyedropper'
 
 type Point = { x: number; y: number }
-type Cell = { col: number; row: number }
 
 type UseFrameSelectionArgs = {
   mode: SelectionMode
-  zoom: number
   baseFrameWidth: number
   baseFrameHeight: number
-  columns: number
-  rows: number
+  imageWidth: number
+  imageHeight: number
   onFrameSelected: (frame: SpriteFrame) => void
 }
 
 export function useFrameSelection({
   mode,
-  zoom,
   baseFrameWidth,
   baseFrameHeight,
-  columns,
-  rows,
+  imageWidth,
+  imageHeight,
   onFrameSelected,
 }: UseFrameSelectionArgs) {
-  const [gridStart, setGridStart] = useState<Cell | null>(null)
-  const [gridCurrent, setGridCurrent] = useState<Cell | null>(null)
-  const [freeStart, setFreeStart] = useState<Point | null>(null)
-  const [freeCurrent, setFreeCurrent] = useState<Point | null>(null)
+  const [selectionStart, setSelectionStart] = useState<Point | null>(null)
+  const [selectionCurrent, setSelectionCurrent] = useState<Point | null>(null)
 
-  const snapFreeRect = useCallback((startPoint: Point, currentPoint: Point) => {
-    const rawX = Math.min(startPoint.x, currentPoint.x) / zoom
-    const rawY = Math.min(startPoint.y, currentPoint.y) / zoom
-    const rawW = Math.abs(currentPoint.x - startPoint.x) / zoom
-    const rawH = Math.abs(currentPoint.y - startPoint.y) / zoom
+  const clampSingleRect = useCallback((point: Point) => ({
+    x: Math.max(0, Math.min(Math.max(0, imageWidth - baseFrameWidth), Math.floor(point.x))),
+    y: Math.max(0, Math.min(Math.max(0, imageHeight - baseFrameHeight), Math.floor(point.y))),
+    w: Math.min(baseFrameWidth, imageWidth),
+    h: Math.min(baseFrameHeight, imageHeight),
+  }), [baseFrameHeight, baseFrameWidth, imageHeight, imageWidth])
+
+  const makeDragRect = useCallback((startPoint: Point, currentPoint: Point) => {
+    const rawX = Math.min(startPoint.x, currentPoint.x)
+    const rawY = Math.min(startPoint.y, currentPoint.y)
+    const rawMaxX = Math.max(startPoint.x, currentPoint.x)
+    const rawMaxY = Math.max(startPoint.y, currentPoint.y)
+    const x = Math.max(0, Math.min(imageWidth - 1, Math.floor(rawX)))
+    const y = Math.max(0, Math.min(imageHeight - 1, Math.floor(rawY)))
+    const maxX = Math.max(x + 1, Math.min(imageWidth, Math.ceil(rawMaxX)))
+    const maxY = Math.max(y + 1, Math.min(imageHeight, Math.ceil(rawMaxY)))
 
     return {
-      x: Math.round(rawX / baseFrameWidth) * baseFrameWidth,
-      y: Math.round(rawY / baseFrameHeight) * baseFrameHeight,
-      w: Math.max(baseFrameWidth, Math.round(rawW / baseFrameWidth) * baseFrameWidth),
-      h: Math.max(baseFrameHeight, Math.round(rawH / baseFrameHeight) * baseFrameHeight),
+      x,
+      y,
+      w: Math.max(1, maxX - x),
+      h: Math.max(1, maxY - y),
     }
-  }, [baseFrameHeight, baseFrameWidth, zoom])
+  }, [imageHeight, imageWidth])
 
-  const pointToCell = (point: Point) => {
-    const col = Math.floor(point.x / (baseFrameWidth * zoom))
-    const row = Math.floor(point.y / (baseFrameHeight * zoom))
-    if (col < 0 || row < 0 || col >= columns || row >= rows) {
-      return null
-    }
-    return { col, row }
-  }
+  const makeFrame = useCallback((rect: { x: number; y: number; w: number; h: number }): SpriteFrame => ({
+    col: 0,
+    row: 0,
+    spanX: 1,
+    spanY: 1,
+    offsetX: 0,
+    offsetY: 0,
+    pixelX: rect.x,
+    pixelY: rect.y,
+    pixelW: rect.w,
+    pixelH: rect.h,
+    duration: 150,
+  }), [])
 
   const start = (point: Point) => {
-    if (mode === 'single') {
-      const cell = pointToCell(point)
-      if (!cell) {
-        return
-      }
-      onFrameSelected({ col: cell.col, row: cell.row, spanX: 1, spanY: 1, offsetX: 0, offsetY: 0, duration: 150 })
+    if (mode === 'single' || mode === 'drag' || mode === 'free') {
+      setSelectionStart(point)
+      setSelectionCurrent(point)
       return
-    }
-
-    if (mode === 'drag') {
-      const cell = pointToCell(point)
-      if (!cell) {
-        return
-      }
-      setGridStart(cell)
-      setGridCurrent(cell)
-      return
-    }
-
-    if (mode === 'free') {
-      setFreeStart(point)
-      setFreeCurrent(point)
     }
   }
 
   const move = (point: Point) => {
-    if (mode === 'drag') {
-      const cell = pointToCell(point)
-      if (cell) {
-        setGridCurrent(cell)
-      }
-      return
-    }
-
-    if (mode === 'free') {
-      setFreeCurrent(point)
+    if (selectionStart && (mode === 'single' || mode === 'drag' || mode === 'free')) {
+      setSelectionCurrent(point)
     }
   }
 
   const end = () => {
-    if (mode === 'drag' && gridStart && gridCurrent) {
-      const col = Math.min(gridStart.col, gridCurrent.col)
-      const row = Math.min(gridStart.row, gridCurrent.row)
-      const spanX = Math.abs(gridCurrent.col - gridStart.col) + 1
-      const spanY = Math.abs(gridCurrent.row - gridStart.row) + 1
-      onFrameSelected({ col, row, spanX, spanY, offsetX: 0, offsetY: 0, duration: 150 })
+    if ((mode === 'single' || mode === 'drag' || mode === 'free') && selectionStart && selectionCurrent) {
+      const rect = mode === 'single'
+        ? clampSingleRect(selectionCurrent)
+        : makeDragRect(selectionStart, selectionCurrent)
+      onFrameSelected(makeFrame(rect))
     }
 
-    if (mode === 'free' && freeStart && freeCurrent) {
-      const snapped = snapFreeRect(freeStart, freeCurrent)
-      onFrameSelected({
-        col: 0,
-        row: 0,
-        spanX: 1,
-        spanY: 1,
-        offsetX: 0,
-        offsetY: 0,
-        pixelX: snapped.x,
-        pixelY: snapped.y,
-        pixelW: snapped.w,
-        pixelH: snapped.h,
-        duration: 150,
-      })
-    }
-
-    setGridStart(null)
-    setGridCurrent(null)
-    setFreeStart(null)
-    setFreeCurrent(null)
+    setSelectionStart(null)
+    setSelectionCurrent(null)
   }
 
   const dragRect = useMemo(() => {
-    if (mode === 'drag' && gridStart && gridCurrent) {
-      return {
-        x: Math.min(gridStart.col, gridCurrent.col) * baseFrameWidth,
-        y: Math.min(gridStart.row, gridCurrent.row) * baseFrameHeight,
-        w: (Math.abs(gridCurrent.col - gridStart.col) + 1) * baseFrameWidth,
-        h: (Math.abs(gridCurrent.row - gridStart.row) + 1) * baseFrameHeight,
-      }
+    if (!selectionStart || !selectionCurrent) {
+      return null
     }
 
-    if (mode === 'free' && freeStart && freeCurrent) {
-      return snapFreeRect(freeStart, freeCurrent)
+    if (mode === 'single') {
+      return clampSingleRect(selectionCurrent)
+    }
+
+    if (mode === 'drag' || mode === 'free') {
+      return makeDragRect(selectionStart, selectionCurrent)
     }
 
     return null
-  }, [baseFrameHeight, baseFrameWidth, freeCurrent, freeStart, gridCurrent, gridStart, mode, snapFreeRect])
+  }, [clampSingleRect, makeDragRect, mode, selectionCurrent, selectionStart])
 
   return { start, move, end, dragRect }
 }

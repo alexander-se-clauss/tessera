@@ -36,7 +36,7 @@ import {
   Typography,
 } from '@mui/material'
 import type { SxProps, Theme } from '@mui/material/styles'
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode, type WheelEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { ExtractedTile, TileRef, TileType } from '../../model/types'
 import {
@@ -45,6 +45,7 @@ import {
   EditorToolbarLabel,
   EditorToolbarSeparator,
 } from '../../components/EditorToolbar'
+import { useCanvasViewport } from '../../hooks/useCanvasViewport'
 import type { AnimationFrameRef, GroupDraft, ObjectStateDraftDef, ObjectStateTransitionDraft, TileHitbox, TileOverride, TilesetOrganizeCollisionStepProps } from './types'
 
 const TERRAIN_TILE_TYPE_OPTIONS: TileType[] = ['floor', 'wall', 'water']
@@ -956,59 +957,27 @@ function SourceRegionPanel({
   hideAssignButton?: boolean
 }) {
   const imageRef = useRef<HTMLImageElement | null>(null)
-  const viewportRef = useRef<HTMLDivElement | null>(null)
   const [matrixCols, setMatrixCols] = useState(1)
   const [matrixRows, setMatrixRows] = useState(1)
   const [hoverAnchor, setHoverAnchor] = useState<{ x: number; y: number } | null>(null)
-  const [zoom, setZoom] = useState(1)
-  const [panX, setPanX] = useState(0)
-  const [panY, setPanY] = useState(0)
   const [panMode, setPanMode] = useState(false)
-  const [panning, setPanning] = useState(false)
   const [matrixDragging, setMatrixDragging] = useState(false)
-  const [panStart, setPanStart] = useState<{ x: number; y: number; panX: number; panY: number } | null>(null)
+  const {
+    viewportRef,
+    zoom,
+    panX,
+    panY,
+    panning,
+    fitToView,
+    updateZoom,
+    clientToContentPoint,
+    startPan,
+    movePan,
+    stopPan,
+    handleWheelZoom,
+  } = useCanvasViewport({ contentWidth: imageWidth, contentHeight: imageHeight })
   const matrixW = Math.max(1, matrixCols) * gridW
   const matrixH = Math.max(1, matrixRows) * gridH
-
-  const clampPan = (nextX: number, nextY: number, nextZoom = zoom) => {
-    const viewport = viewportRef.current
-    if (!viewport) return { x: nextX, y: nextY }
-    const scaledWidth = imageWidth * nextZoom
-    const scaledHeight = imageHeight * nextZoom
-    const minVisibleX = Math.min(viewport.clientWidth * 0.8, scaledWidth * 0.8)
-    const minVisibleY = Math.min(viewport.clientHeight * 0.8, scaledHeight * 0.8)
-    return {
-      x: Math.min(viewport.clientWidth - minVisibleX, Math.max(minVisibleX - scaledWidth, nextX)),
-      y: Math.min(viewport.clientHeight - minVisibleY, Math.max(minVisibleY - scaledHeight, nextY)),
-    }
-  }
-
-  const fitToView = () => {
-    const viewport = viewportRef.current
-    if (!viewport || imageWidth <= 0 || imageHeight <= 0) return
-    const nextZoom = Math.max(0.25, Math.min(8, Math.min((viewport.clientWidth * 0.9) / imageWidth, (viewport.clientHeight * 0.9) / imageHeight)))
-    setZoom(nextZoom)
-    setPanX((viewport.clientWidth - imageWidth * nextZoom) / 2)
-    setPanY((viewport.clientHeight - imageHeight * nextZoom) / 2)
-  }
-
-  useEffect(() => {
-    fitToView()
-  }, [imageWidth, imageHeight])
-
-  const updateZoom = (nextZoom: number) => {
-    const viewport = viewportRef.current
-    if (!viewport) return
-    const clampedZoom = Math.max(0.25, Math.min(8, nextZoom))
-    const centerX = viewport.clientWidth / 2
-    const centerY = viewport.clientHeight / 2
-    const imageX = (centerX - panX) / zoom
-    const imageY = (centerY - panY) / zoom
-    const nextPan = clampPan(centerX - imageX * clampedZoom, centerY - imageY * clampedZoom, clampedZoom)
-    setZoom(clampedZoom)
-    setPanX(nextPan.x)
-    setPanY(nextPan.y)
-  }
 
   const cropRegion = (sourceX: number, sourceY: number, width = gridW, height = gridH) => {
     const image = imageRef.current
@@ -1044,11 +1013,10 @@ function SourceRegionPanel({
   }
 
   const imagePointFromMouse = (event: MouseEvent<HTMLDivElement>) => {
-    const viewport = viewportRef.current
-    if (!viewport) return null
-    const rect = viewport.getBoundingClientRect()
-    const x = Math.floor((event.clientX - rect.left - panX) / zoom)
-    const y = Math.floor((event.clientY - rect.top - panY) / zoom)
+    const point = clientToContentPoint(event.clientX, event.clientY)
+    if (!point) return null
+    const x = Math.floor(point.x)
+    const y = Math.floor(point.y)
     if (x < 0 || y < 0 || x >= imageWidth || y >= imageHeight) return null
     return { x, y }
   }
@@ -1083,16 +1051,11 @@ function SourceRegionPanel({
       return
     }
     if (!panMode && event.button !== 2) return
-    event.preventDefault()
-    setPanning(true)
-    setPanStart({ x: event.clientX, y: event.clientY, panX, panY })
+    startPan(event)
   }
 
   const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    if (panStart) {
-      const nextPan = clampPan(panStart.panX + (event.clientX - panStart.x), panStart.panY + (event.clientY - panStart.y))
-      setPanX(nextPan.x)
-      setPanY(nextPan.y)
+    if (movePan(event)) {
       return
     }
     if (matrixDragging) {
@@ -1103,14 +1066,8 @@ function SourceRegionPanel({
   }
 
   const handleMouseUp = () => {
-    setPanning(false)
     setMatrixDragging(false)
-    setPanStart(null)
-  }
-
-  const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    updateZoom(zoom + (event.deltaY < 0 ? 0.25 : -0.25))
+    stopPan()
   }
 
   return (
@@ -1193,7 +1150,7 @@ function SourceRegionPanel({
       </Box>
       <Box
         ref={viewportRef}
-        onWheel={handleWheel}
+        onWheel={handleWheelZoom}
         onContextMenu={(event) => event.preventDefault()}
         onMouseUp={handleMouseUp}
         onMouseLeave={() => {

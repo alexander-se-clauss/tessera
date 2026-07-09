@@ -121,8 +121,8 @@ export function ImportSpriteDialog({
   const [createTileset] = useCreateTilesetMutation()
   const [updateTileset] = useUpdateTilesetMutation()
 
-  const frameIndexByStateRef = useRef<Record<string, number>>({})
   const imageUrlRef = useRef('')
+  const [currentFrameIndexByState, setCurrentFrameIndexByState] = useState<Record<string, number>>({})
   const [frameIndexSnapshot, setFrameIndexSnapshot] = useState<Record<string, number>>({})
 
   useEffect(() => {
@@ -130,7 +130,7 @@ export function ImportSpriteDialog({
   }, [imageUrl])
 
   const handleCurrentFrameIndexChange = (stateId: string, index: number) => {
-    frameIndexByStateRef.current[stateId] = index
+    setCurrentFrameIndexByState((prev) => (prev[stateId] === index ? prev : { ...prev, [stateId]: index }))
   }
 
   // Reset when dialog closes
@@ -153,7 +153,7 @@ export function ImportSpriteDialog({
       setSelectionMode('single')
       setPickerAnchorEl(null)
       setBlockedColors([])
-      frameIndexByStateRef.current = {}
+      setCurrentFrameIndexByState({})
       setFrameIndexSnapshot({})
     }
   }, [open])
@@ -189,7 +189,7 @@ export function ImportSpriteDialog({
     setSelectionMode('single')
     setPickerAnchorEl(null)
     setBlockedColors(nextBlockedColors)
-    frameIndexByStateRef.current = {}
+    setCurrentFrameIndexByState({})
     setFrameIndexSnapshot({})
   }, [editingSprite, open])
 
@@ -299,6 +299,11 @@ export function ImportSpriteDialog({
 
   const handleDeleteState = (id: string) => {
     setStates((prev) => prev.filter((s) => s.id !== id))
+    setCurrentFrameIndexByState((prev) => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
     if (activeStateId === id) {
       setActiveStateId(() => {
         const remaining = states.filter((s) => s.id !== id)
@@ -307,14 +312,26 @@ export function ImportSpriteDialog({
     }
   }
   const handleAddFrame = (stateId: string, frame: SpriteFrame) => {
+    const nextFrameIndex = states.find((s) => s.id === stateId)?.frames.length ?? 0
     setStates((prev) => prev.map((s) => s.id === stateId
       ? { ...s, frames: [...s.frames, { ...frame, offsetX: frame.offsetX ?? 0, offsetY: frame.offsetY ?? 0 }] }
       : s))
+    setCurrentFrameIndexByState((prev) => ({ ...prev, [stateId]: nextFrameIndex }))
   }
   const handleRemoveFrame = (stateId: string, frameIndex: number) => {
+    const frameCount = states.find((s) => s.id === stateId)?.frames.length ?? 0
+    const currentFrameIndex = currentFrameIndexByState[stateId] ?? 0
+    const nextFrameCount = Math.max(0, frameCount - 1)
+    const nextFrameIndex = nextFrameCount === 0
+      ? 0
+      : frameIndex < currentFrameIndex
+        ? currentFrameIndex - 1
+        : Math.min(currentFrameIndex, nextFrameCount - 1)
+
     setStates((prev) => prev.map((s) => s.id === stateId
       ? { ...s, frames: s.frames.filter((_, i) => i !== frameIndex) }
       : s))
+    setCurrentFrameIndexByState((prev) => ({ ...prev, [stateId]: nextFrameIndex }))
   }
   const handleUpdateFrame = (stateId: string, frameIndex: number, updates: Partial<SpriteFrame>) => {
     setStates((prev) => prev.map((s) => s.id === stateId
@@ -329,7 +346,7 @@ export function ImportSpriteDialog({
       title={isEditing ? 'Edit sprite' : 'Import sprite'}
       titleAdornment={<StepIndicator step={step} />}
       height="min(860px, calc(100vh - 40px))"
-      contentSx={{ p: 0, overflow: 'hidden' }}
+      contentSx={{ p: 0, pt: '0 !important', overflow: 'hidden' }}
       actions={
         <>
           <Button onClick={onClose} sx={dialogCancelButtonSx}>Cancel</Button>
@@ -343,7 +360,7 @@ export function ImportSpriteDialog({
               </Button>
             )}
             {step === 1 && (
-              <Button onClick={() => { setFrameIndexSnapshot({ ...frameIndexByStateRef.current }); setStep(2) }} disabled={!canAdvanceStep2} sx={dialogPrimaryButtonSx}>
+              <Button onClick={() => { setFrameIndexSnapshot({ ...currentFrameIndexByState }); setStep(2) }} disabled={!canAdvanceStep2} sx={dialogPrimaryButtonSx}>
                 Next
               </Button>
             )}
@@ -375,9 +392,9 @@ export function ImportSpriteDialog({
         {step === 1 && imageUrl && (
           <StatesStep
             imageUrl={imageUrl} baseFrameWidth={baseFrameWidth} baseFrameHeight={baseFrameHeight}
-            columns={columns} rows={rows} imageNaturalWidth={imageSize.width} imageNaturalHeight={imageSize.height}
+            imageNaturalWidth={imageSize.width} imageNaturalHeight={imageSize.height}
             states={states} activeStateId={activeStateId} selectionMode={selectionMode}
-            validationErrors={validationErrors} onSetActiveState={setActiveStateId}
+            validationErrors={validationErrors} currentFrameIndex={currentFrameIndexByState[activeStateId] ?? 0} onSetActiveState={setActiveStateId}
             onSetSelectionMode={setSelectionMode} onOpenPresetPicker={setPickerAnchorEl}
             onDeleteState={handleDeleteState} onAddFrame={handleAddFrame}
             onRemoveFrame={handleRemoveFrame} onUpdateFrame={handleUpdateFrame}

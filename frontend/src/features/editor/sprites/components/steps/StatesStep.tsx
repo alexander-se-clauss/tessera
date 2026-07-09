@@ -9,8 +9,6 @@ type StatesStepProps = {
   imageUrl: string
   baseFrameWidth: number
   baseFrameHeight: number
-  columns: number
-  rows: number
   imageNaturalWidth: number
   imageNaturalHeight: number
   states: SpriteState[]
@@ -18,6 +16,7 @@ type StatesStepProps = {
   selectionMode: SelectionMode
   validationErrors: Map<string, string>
   blockedColors: string[]
+  currentFrameIndex: number
   onSetActiveState: (id: string) => void
   onSetSelectionMode: (mode: SelectionMode) => void
   onOpenPresetPicker: (anchorEl: HTMLElement) => void
@@ -34,8 +33,6 @@ export function StatesStep({
   imageUrl,
   baseFrameWidth,
   baseFrameHeight,
-  columns,
-  rows,
   imageNaturalWidth,
   imageNaturalHeight,
   states,
@@ -43,6 +40,7 @@ export function StatesStep({
   selectionMode,
   validationErrors,
   blockedColors,
+  currentFrameIndex,
   onSetActiveState,
   onSetSelectionMode,
   onOpenPresetPicker,
@@ -85,8 +83,6 @@ export function StatesStep({
         baseFrameHeight={baseFrameHeight}
         imageNaturalWidth={imageNaturalWidth}
         imageNaturalHeight={imageNaturalHeight}
-        columns={columns}
-        rows={rows}
         states={states}
         activeStateId={activeStateId}
         selectionMode={selectionMode}
@@ -102,6 +98,7 @@ export function StatesStep({
         baseFrameWidth={baseFrameWidth}
         baseFrameHeight={baseFrameHeight}
         activeState={activeState}
+        currentFrameIndex={currentFrameIndex}
         blockedColors={blockedColors}
         onRemoveBlockedColor={onRemoveBlockedColor}
         onRemoveFrame={onRemoveFrame}

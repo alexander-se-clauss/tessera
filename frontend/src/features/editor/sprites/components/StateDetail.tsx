@@ -51,6 +51,7 @@ type StateDetailProps = {
   baseFrameWidth: number
   baseFrameHeight: number
   activeState: SpriteState | null
+  currentFrameIndex: number
   blockedColors: string[]
   onRemoveBlockedColor: (color: string) => void
   onRemoveFrame: (stateId: string, frameIndex: number) => void
@@ -154,6 +155,7 @@ export function StateDetail({
   baseFrameWidth,
   baseFrameHeight,
   activeState,
+  currentFrameIndex,
   blockedColors,
   onRemoveBlockedColor,
   onRemoveFrame,
@@ -174,12 +176,16 @@ export function StateDetail({
       blockedColors,
     },
   )
+  const canPlayAnimation = (activeState?.frames.length ?? 0) >= 2
+  const selectedFrameIndex = activeState?.frames.length
+    ? Math.min(currentFrameIndex, activeState.frames.length - 1)
+    : 0
 
   useEffect(() => {
-    if (activeState && onCurrentFrameIndexChange) {
-      onCurrentFrameIndexChange(activeState.id, currentIndex)
+    if (!playing && currentIndex !== selectedFrameIndex) {
+      setCurrentIndex(selectedFrameIndex)
     }
-  }, [activeState, currentIndex, onCurrentFrameIndexChange])
+  }, [currentIndex, playing, selectedFrameIndex, setCurrentIndex])
 
   useEffect(() => {
     if (!imageUrl) {
@@ -193,9 +199,14 @@ export function StateDetail({
   }, [imageUrl])
 
   useEffect(() => {
-    setCurrentIndex(0)
     setPlaying(false)
-  }, [activeState?.id, setCurrentIndex, setPlaying])
+  }, [activeState?.id, setPlaying])
+
+  useEffect(() => {
+    if (!canPlayAnimation) {
+      setPlaying(false)
+    }
+  }, [canPlayAnimation, setPlaying])
 
   useEffect(() => {
     if (!activeState) {
@@ -221,7 +232,13 @@ export function StateDetail({
     )
   }
 
-  const selectedFrame = activeState.frames[currentIndex] ?? null
+  const selectedFrame = activeState.frames[selectedFrameIndex] ?? null
+
+  const handleSetCurrentFrameIndex = (index: number) => {
+    setPlaying(false)
+    setCurrentIndex(index)
+    onCurrentFrameIndexChange?.(activeState.id, index)
+  }
 
   return (
     <Box
@@ -285,10 +302,11 @@ export function StateDetail({
             placeItems: 'center',
           }}
         >
-          <Tooltip title="Play animation">
+          <Tooltip title={canPlayAnimation ? 'Play animation' : 'Animation needs at least two frames'}>
             <IconButton
               size="small"
               onClick={() => setPlaying((value) => !value)}
+              disabled={!canPlayAnimation}
               sx={{
                 position: 'absolute',
                 top: 8,
@@ -297,6 +315,7 @@ export function StateDetail({
                 p: 0.375,
                 color: playing ? '#79b8ff' : '#8b949e',
                 '&:hover': { color: '#e6edf3', background: 'transparent' },
+                '&.Mui-disabled': { color: 'rgba(139,148,158,0.35)' },
               }}
             >
               {playing ? <PauseIcon sx={{ fontSize: 16 }} /> : <PlayArrowIcon sx={{ fontSize: 16 }} />}
@@ -341,6 +360,7 @@ export function StateDetail({
             <IconButton
               size="small"
               onClick={() => setPlaying((value) => !value)}
+              disabled={!canPlayAnimation}
               sx={{
                 width: 44,
                 height: 44,
@@ -349,6 +369,7 @@ export function StateDetail({
                 border: '1px solid rgba(255,255,255,0.06)',
                 color: playing ? '#5d9eff' : '#8b949e',
                 '&:hover': { bgcolor: 'rgba(255,255,255,0.07)', color: '#c9d1d9' },
+                '&.Mui-disabled': { color: 'rgba(139,148,158,0.35)', bgcolor: 'rgba(255,255,255,0.025)' },
               }}
             >
               {playing ? <PauseIcon sx={{ fontSize: 18 }} /> : <PlayArrowIcon sx={{ fontSize: 18 }} />}
@@ -361,12 +382,12 @@ export function StateDetail({
               key={index}
               frame={frame}
               index={index}
-              currentFrameIndex={currentIndex}
+              currentFrameIndex={selectedFrameIndex}
               baseFrameWidth={baseFrameWidth}
               baseFrameHeight={baseFrameHeight}
               imageEl={imageEl}
               blockedColors={blockedColors}
-              onSetCurrentFrameIndex={setCurrentIndex}
+              onSetCurrentFrameIndex={handleSetCurrentFrameIndex}
             />
           ))}
         </Box>
@@ -381,7 +402,7 @@ export function StateDetail({
             <Tooltip title="Delete frame">
               <IconButton
                 size="small"
-                onClick={() => onRemoveFrame(activeState.id, currentIndex)}
+                onClick={() => onRemoveFrame(activeState.id, selectedFrameIndex)}
                 sx={{ color: '#6a737d', '&:hover': { color: '#e84b4a', background: 'rgba(255,255,255,0.04)' } }}
               >
                 <CloseIcon sx={{ fontSize: 14 }} />
@@ -398,7 +419,7 @@ export function StateDetail({
                 size="small"
                 type="number"
                 value={selectedFrame.duration}
-                onChange={(event) => onUpdateFrame(activeState.id, currentIndex, { duration: Math.max(1, Number(event.target.value) || 1) })}
+                onChange={(event) => onUpdateFrame(activeState.id, selectedFrameIndex, { duration: Math.max(1, Number(event.target.value) || 1) })}
                 slotProps={{
                   htmlInput: {
                     min: 1,
@@ -410,14 +431,14 @@ export function StateDetail({
               <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', mb: '1px' }}>
                 <IconButton
                   size="small"
-                  onClick={() => onUpdateFrame(activeState.id, currentIndex, { duration: selectedFrame.duration + 1 })}
+                  onClick={() => onUpdateFrame(activeState.id, selectedFrameIndex, { duration: selectedFrame.duration + 1 })}
                   sx={stepperButtonSx}
                 >
                   <KeyboardArrowUpIcon sx={{ fontSize: 14 }} />
                 </IconButton>
                 <IconButton
                   size="small"
-                  onClick={() => onUpdateFrame(activeState.id, currentIndex, { duration: Math.max(1, selectedFrame.duration - 1) })}
+                  onClick={() => onUpdateFrame(activeState.id, selectedFrameIndex, { duration: Math.max(1, selectedFrame.duration - 1) })}
                   sx={stepperButtonSx}
                 >
                   <KeyboardArrowDownIcon sx={{ fontSize: 14 }} />
@@ -434,7 +455,7 @@ export function StateDetail({
                   size="small"
                   type="number"
                   value={selectedFrame.offsetX}
-                  onChange={(event) => onUpdateFrame(activeState.id, currentIndex, { offsetX: clampOffset(Number(event.target.value) || 0) })}
+                  onChange={(event) => onUpdateFrame(activeState.id, selectedFrameIndex, { offsetX: clampOffset(Number(event.target.value) || 0) })}
                   slotProps={{
                     htmlInput: {
                       min: -15,
@@ -446,14 +467,14 @@ export function StateDetail({
                 <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', mb: '1px' }}>
                   <IconButton
                     size="small"
-                    onClick={() => onUpdateFrame(activeState.id, currentIndex, { offsetX: clampOffset(selectedFrame.offsetX + 1) })}
+                    onClick={() => onUpdateFrame(activeState.id, selectedFrameIndex, { offsetX: clampOffset(selectedFrame.offsetX + 1) })}
                     sx={stepperButtonSx}
                   >
                     <KeyboardArrowUpIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={() => onUpdateFrame(activeState.id, currentIndex, { offsetX: clampOffset(selectedFrame.offsetX - 1) })}
+                    onClick={() => onUpdateFrame(activeState.id, selectedFrameIndex, { offsetX: clampOffset(selectedFrame.offsetX - 1) })}
                     sx={stepperButtonSx}
                   >
                     <KeyboardArrowDownIcon sx={{ fontSize: 14 }} />
@@ -466,7 +487,7 @@ export function StateDetail({
                   size="small"
                   type="number"
                   value={selectedFrame.offsetY}
-                  onChange={(event) => onUpdateFrame(activeState.id, currentIndex, { offsetY: clampOffset(Number(event.target.value) || 0) })}
+                  onChange={(event) => onUpdateFrame(activeState.id, selectedFrameIndex, { offsetY: clampOffset(Number(event.target.value) || 0) })}
                   slotProps={{
                     htmlInput: {
                       min: -15,
@@ -478,14 +499,14 @@ export function StateDetail({
                 <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', mb: '1px' }}>
                   <IconButton
                     size="small"
-                    onClick={() => onUpdateFrame(activeState.id, currentIndex, { offsetY: clampOffset(selectedFrame.offsetY + 1) })}
+                    onClick={() => onUpdateFrame(activeState.id, selectedFrameIndex, { offsetY: clampOffset(selectedFrame.offsetY + 1) })}
                     sx={stepperButtonSx}
                   >
                     <KeyboardArrowUpIcon sx={{ fontSize: 14 }} />
                   </IconButton>
                   <IconButton
                     size="small"
-                    onClick={() => onUpdateFrame(activeState.id, currentIndex, { offsetY: clampOffset(selectedFrame.offsetY - 1) })}
+                    onClick={() => onUpdateFrame(activeState.id, selectedFrameIndex, { offsetY: clampOffset(selectedFrame.offsetY - 1) })}
                     sx={stepperButtonSx}
                   >
                     <KeyboardArrowDownIcon sx={{ fontSize: 14 }} />
