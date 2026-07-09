@@ -3,14 +3,6 @@ import { useState } from 'react'
 
 type TilesetType = 'background' | 'object'
 
-const tilesetTypeFieldSx = {
-  '& .MuiSelect-select': {
-    minHeight: '1.4375em',
-    padding: '16.5px 14px',
-    paddingRight: '32px',
-  },
-}
-
 type CreateTilesetDialogProps = {
   open: boolean
   onClose: () => void
@@ -49,7 +41,7 @@ export function CreateTilesetDialog({ open, onClose, onCreate }: CreateTilesetDi
       <DialogTitle>New Tileset</DialogTitle>
       <DialogContent sx={{ display: 'grid', gap: 2, pt: '20px !important' }}>
         <TextField autoFocus label="Name" value={name} onChange={(event) => setName(event.target.value)} />
-        <TextField select label="Type" value={type} onChange={(event) => setType(event.target.value as TilesetType)} sx={tilesetTypeFieldSx}>
+        <TextField select label="Type" value={type} onChange={(event) => setType(event.target.value as TilesetType)}>
           <MenuItem value="background">Background</MenuItem>
           <MenuItem value="object">Object</MenuItem>
         </TextField>
