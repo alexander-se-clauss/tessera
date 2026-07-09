@@ -1,14 +1,25 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material'
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, TextField } from '@mui/material'
 import { useState } from 'react'
+
+type TilesetType = 'background' | 'object'
+
+const tilesetTypeFieldSx = {
+  '& .MuiSelect-select': {
+    minHeight: '1.4375em',
+    padding: '16.5px 14px',
+    paddingRight: '32px',
+  },
+}
 
 type CreateTilesetDialogProps = {
   open: boolean
   onClose: () => void
-  onCreate: (payload: { name: string; tileWidth: number; tileHeight: number }) => Promise<void>
+  onCreate: (payload: { name: string; type: TilesetType; tileWidth: number; tileHeight: number }) => Promise<void>
 }
 
 export function CreateTilesetDialog({ open, onClose, onCreate }: CreateTilesetDialogProps) {
   const [name, setName] = useState('')
+  const [type, setType] = useState<TilesetType>('background')
   const [tileWidth, setTileWidth] = useState(16)
   const [tileHeight, setTileHeight] = useState(16)
   const [saving, setSaving] = useState(false)
@@ -19,10 +30,12 @@ export function CreateTilesetDialog({ open, onClose, onCreate }: CreateTilesetDi
     try {
       await onCreate({
         name: name.trim(),
+        type,
         tileWidth: Math.max(8, Math.min(64, tileWidth || 16)),
         tileHeight: Math.max(8, Math.min(64, tileHeight || 16)),
       })
       setName('')
+      setType('background')
       setTileWidth(16)
       setTileHeight(16)
       onClose()
@@ -36,6 +49,10 @@ export function CreateTilesetDialog({ open, onClose, onCreate }: CreateTilesetDi
       <DialogTitle>New Tileset</DialogTitle>
       <DialogContent sx={{ display: 'grid', gap: 2, pt: '20px !important' }}>
         <TextField autoFocus label="Name" value={name} onChange={(event) => setName(event.target.value)} />
+        <TextField select label="Type" value={type} onChange={(event) => setType(event.target.value as TilesetType)} sx={tilesetTypeFieldSx}>
+          <MenuItem value="background">Background</MenuItem>
+          <MenuItem value="object">Object</MenuItem>
+        </TextField>
         <TextField label="Tile width" type="number" value={tileWidth} onChange={(event) => setTileWidth(Number(event.target.value))} />
         <TextField label="Tile height" type="number" value={tileHeight} onChange={(event) => setTileHeight(Number(event.target.value))} />
       </DialogContent>
