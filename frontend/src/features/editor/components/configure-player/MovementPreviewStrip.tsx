@@ -11,19 +11,11 @@ export function MovementPreviewStrip({ frames, speed }: MovementPreviewStripProp
   return (
     <Box
       sx={{
-        borderRadius: 3,
-        p: 1.5,
-        background: 'linear-gradient(180deg, rgba(22,28,38,0.74), rgba(15,21,30,0.68))',
-        border: '1px solid rgba(255,255,255,0.05)',
-        boxShadow: '0 18px 50px rgba(0,0,0,0.22)',
         display: 'flex',
         flexDirection: 'column',
         gap: 1.5,
       }}
     >
-      <Typography sx={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(220,230,245,0.42)' }}>
-        Movement Preview
-      </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, flex: 1, minWidth: 0 }}>
           {frames.map((frame, index) => (
@@ -56,11 +48,6 @@ export function MovementPreviewStrip({ frames, speed }: MovementPreviewStripProp
           sx={{
             width: 120,
             flexShrink: 0,
-            borderRadius: 2,
-            bgcolor: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.05)',
-            px: 1.25,
-            py: 1.25,
             display: 'flex',
             flexDirection: 'column',
             gap: 0.5,

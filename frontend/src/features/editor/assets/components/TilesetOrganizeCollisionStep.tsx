@@ -42,6 +42,8 @@ import type { ExtractedTile, TileRef, TileType } from '../../model/types'
 import {
   EditorToolbar,
   EditorToolbarButton,
+  EditorToolbarLabel,
+  EditorToolbarSeparator,
 } from '../../components/EditorToolbar'
 import type { AnimationFrameRef, GroupDraft, ObjectStateDraftDef, ObjectStateTransitionDraft, TileHitbox, TileOverride, TilesetOrganizeCollisionStepProps } from './types'
 
@@ -92,6 +94,7 @@ export function TilesetOrganizeCollisionStep({
   sourceGridW = TILE_SIZE,
   sourceGridH = TILE_SIZE,
   importWorkspace = false,
+  hasTargetTileset = true,
   sourceToolbarContent,
   targetSelector,
   crossTilesetTargets = [],
@@ -317,12 +320,10 @@ export function TilesetOrganizeCollisionStep({
           flexDirection: 'column',
           alignItems: 'flex-start',
           gap: 2,
-          overflowY: 'auto',
+          overflowY: importWorkspace ? 'hidden' : 'auto',
           overflowX: 'hidden',
-          pb: 4,
           borderRight: '1px solid rgba(255,255,255,0.06)',
-          px: 2,
-          pt: 1.5,
+          p: 2,
         }}
       >
         {sourceImageUrl && onToggleSourceRegion ? (
@@ -388,10 +389,7 @@ export function TilesetOrganizeCollisionStep({
           gap: 3,
           overflowY: 'auto',
           overflowX: 'hidden',
-          pb: 4,
-          pl: 2,
-          pr: 1.5,
-          pt: 1.5,
+          p: 2,
           '& > *': {
             minWidth: 0,
             maxWidth: '100%',
@@ -400,62 +398,70 @@ export function TilesetOrganizeCollisionStep({
           },
         }}
       >
-        {targetSelector}
-        <GroupPropertiesPanel
-          activeGroup={activeGroup}
-          onUpdateGroupDimension={onUpdateGroupDimension}
-          onUpdateGroupTileType={onUpdateGroupTileType}
-          onDeleteGroup={onDeleteGroup}
-        />
-        <TileLayoutPreview
-          activeGroup={activeGroup}
-          groups={groups}
-          tiles={allTiles}
-          selectedTileId={selectedLayoutTileId}
-          draggedItem={draggedLayoutItem}
-          tileOverrides={tileOverrides}
-          sourceImageUrl={sourceImageUrl}
-          tileWidth={sourceGridW}
-          tileHeight={sourceGridH}
-          highlightedTileId={layoutContextMenu?.tileId ?? null}
-          fadingTileId={fadingTileId}
-          flashActive={activeGroup?.id === flashGroupId}
-          onSetSelectedTileId={handleLayoutTileSelect}
-          onSetDraggedLayoutItem={onSetDraggedLayoutItem}
-          onMoveLayoutItem={onMoveLayoutItem}
-          onRemoveTile={onRemoveTileFromGroup}
-          onOpenContextMenu={(tileId, event, mobile = false, groupId) => {
-            const targetGroupId = groupId ?? activeGroup?.id
-            if (!targetGroupId) return
-            setLayoutContextMenu({
-              tileId,
-              groupId: targetGroupId,
-              x: mobile ? window.innerWidth / 2 : event.clientX,
-              y: mobile ? window.innerHeight / 2 : event.clientY,
-              mobile,
-            })
-            setLayoutMenuMode('root')
-          }}
-        />
-        <TileCollisionEditor
-          selectedTile={selectedTile}
-          selectedTileId={selectedLayoutTileId}
-          allTiles={allTiles}
-          activeGroup={activeGroup}
-          sourceImageUrl={sourceImageUrl}
-          tileWidth={sourceGridW}
-          tileHeight={sourceGridH}
-          effectiveType={effectiveType}
-          effectiveSolid={effectiveSolid}
-          isPickingAnimationFrame={animationFramePickerTileId === selectedLayoutTileId}
-          onStartAnimationFramePick={() => {
-            if (selectedLayoutTileId != null) setAnimationFramePickerTileId(selectedLayoutTileId)
-          }}
-          onUpdateTileOverride={onUpdateTileOverride}
-          onUpdateGroupMeta={onUpdateGroupMeta}
-          stateSpritePickerIdx={stateSpritePickerIdx}
-          onStartStateSpritePick={(idx) => setStateSpritePickerIdx(idx)}
-        />
+        {importWorkspace && !hasTargetTileset ? (
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            Select a tileset to edit.
+          </Typography>
+        ) : (
+          <>
+            {targetSelector}
+            <GroupPropertiesPanel
+              activeGroup={activeGroup}
+              onUpdateGroupDimension={onUpdateGroupDimension}
+              onUpdateGroupTileType={onUpdateGroupTileType}
+              onDeleteGroup={onDeleteGroup}
+            />
+            <TileLayoutPreview
+              activeGroup={activeGroup}
+              groups={groups}
+              tiles={allTiles}
+              selectedTileId={selectedLayoutTileId}
+              draggedItem={draggedLayoutItem}
+              tileOverrides={tileOverrides}
+              sourceImageUrl={sourceImageUrl}
+              tileWidth={sourceGridW}
+              tileHeight={sourceGridH}
+              highlightedTileId={layoutContextMenu?.tileId ?? null}
+              fadingTileId={fadingTileId}
+              flashActive={activeGroup?.id === flashGroupId}
+              onSetSelectedTileId={handleLayoutTileSelect}
+              onSetDraggedLayoutItem={onSetDraggedLayoutItem}
+              onMoveLayoutItem={onMoveLayoutItem}
+              onRemoveTile={onRemoveTileFromGroup}
+              onOpenContextMenu={(tileId, event, mobile = false, groupId) => {
+                const targetGroupId = groupId ?? activeGroup?.id
+                if (!targetGroupId) return
+                setLayoutContextMenu({
+                  tileId,
+                  groupId: targetGroupId,
+                  x: mobile ? window.innerWidth / 2 : event.clientX,
+                  y: mobile ? window.innerHeight / 2 : event.clientY,
+                  mobile,
+                })
+                setLayoutMenuMode('root')
+              }}
+            />
+            <TileCollisionEditor
+              selectedTile={selectedTile}
+              selectedTileId={selectedLayoutTileId}
+              allTiles={allTiles}
+              activeGroup={activeGroup}
+              sourceImageUrl={sourceImageUrl}
+              tileWidth={sourceGridW}
+              tileHeight={sourceGridH}
+              effectiveType={effectiveType}
+              effectiveSolid={effectiveSolid}
+              isPickingAnimationFrame={animationFramePickerTileId === selectedLayoutTileId}
+              onStartAnimationFramePick={() => {
+                if (selectedLayoutTileId != null) setAnimationFramePickerTileId(selectedLayoutTileId)
+              }}
+              onUpdateTileOverride={onUpdateTileOverride}
+              onUpdateGroupMeta={onUpdateGroupMeta}
+              stateSpritePickerIdx={stateSpritePickerIdx}
+              onStartStateSpritePick={(idx) => setStateSpritePickerIdx(idx)}
+            />
+          </>
+        )}
       </Box>
     </Box>
     <LayoutTileContextMenu
@@ -886,9 +892,9 @@ function TileGridPanel({
 
 function EmptySourceCanvas({ toolbarContent }: { toolbarContent?: ReactNode }) {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.1, width: '100%', maxWidth: '100%', minHeight: 0, flex: 1 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-        <EditorToolbar>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', maxWidth: '100%', minHeight: 0, flex: 1 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', alignItems: 'center', width: '100%', flexShrink: 0, columnGap: 1.5 }}>
+        <EditorToolbar sx={{ width: '100%', justifyContent: 'flex-start', minHeight: 40, py: 0 }}>
           {toolbarContent}
         </EditorToolbar>
       </Box>
@@ -959,6 +965,7 @@ function SourceRegionPanel({
   const [panY, setPanY] = useState(0)
   const [panMode, setPanMode] = useState(false)
   const [panning, setPanning] = useState(false)
+  const [matrixDragging, setMatrixDragging] = useState(false)
   const [panStart, setPanStart] = useState<{ x: number; y: number; panX: number; panY: number } | null>(null)
   const matrixW = Math.max(1, matrixCols) * gridW
   const matrixH = Math.max(1, matrixRows) * gridH
@@ -1047,6 +1054,7 @@ function SourceRegionPanel({
   }
 
   const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
     if (panMode || panning) return
     if (isPickingAnimationFrame) {
       const anchor = singleTileAnchorFromMouse(event)
@@ -1068,17 +1076,27 @@ function SourceRegionPanel({
   }
 
   const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    if (!panMode) return
+    if (!panMode && event.button === 0 && !isPickingAnimationFrame) {
+      event.preventDefault()
+      setMatrixDragging(true)
+      setHoverAnchor(anchorFromMouse(event))
+      return
+    }
+    if (!panMode && event.button !== 2) return
     event.preventDefault()
     setPanning(true)
     setPanStart({ x: event.clientX, y: event.clientY, panX, panY })
   }
 
   const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    if (panMode && panStart) {
+    if (panStart) {
       const nextPan = clampPan(panStart.panX + (event.clientX - panStart.x), panStart.panY + (event.clientY - panStart.y))
       setPanX(nextPan.x)
       setPanY(nextPan.y)
+      return
+    }
+    if (matrixDragging) {
+      setHoverAnchor(anchorFromMouse(event))
       return
     }
     setHoverAnchor(isPickingAnimationFrame ? singleTileAnchorFromMouse(event) : anchorFromMouse(event))
@@ -1086,36 +1104,30 @@ function SourceRegionPanel({
 
   const handleMouseUp = () => {
     setPanning(false)
+    setMatrixDragging(false)
     setPanStart(null)
   }
 
   const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (event.ctrlKey) {
-      event.preventDefault()
-      updateZoom(zoom + (event.deltaY < 0 ? 0.25 : -0.25))
-      return
-    }
-    const nextPan = clampPan(panX - event.deltaX, panY - event.deltaY)
-    setPanX(nextPan.x)
-    setPanY(nextPan.y)
+    event.preventDefault()
+    updateZoom(zoom + (event.deltaY < 0 ? 0.25 : -0.25))
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.1, width: '100%', maxWidth: '100%' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%', maxWidth: '100%', minHeight: 0, flex: 1 }}>
       {isPickingAnimationFrame ? (
         <Typography sx={{ fontSize: 11, color: '#378ADD', textAlign: 'center' }}>
           Click a tile to add to animation sequence
         </Typography>
       ) : null}
-      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-        <EditorToolbar>
-          {toolbarContent ? (
-            <>
-              {toolbarContent}
-              <Box sx={{ width: 12, flexShrink: 0 }} />
-            </>
-          ) : null}
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, mr: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: toolbarContent ? 'auto minmax(0, 1fr)' : '1fr', alignItems: 'center', width: '100%', flexShrink: 0, columnGap: 1.5 }}>
+        {toolbarContent ? (
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}>
+            {toolbarContent}
+          </Box>
+        ) : null}
+        <EditorToolbar sx={{ justifySelf: 'center', maxWidth: '100%', overflowX: 'auto', minHeight: 40, py: 0 }}>
+          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
             <Typography sx={{ fontSize: 11, color: '#8b949e', whiteSpace: 'nowrap' }}>Matrix</Typography>
             <TextField
               type="number"
@@ -1123,7 +1135,7 @@ function SourceRegionPanel({
               value={matrixCols}
               onChange={(event) => setMatrixCols(Math.max(1, Math.min(32, Number(event.target.value) || 1)))}
               slotProps={{ input: { inputProps: { min: 1, max: 32, step: 1 } } }}
-              sx={{ width: 54, '& .MuiInputBase-input': { py: 0.35, px: 0.75, fontSize: 12 } }}
+              sx={toolbarNumberFieldSx}
             />
             <Typography sx={{ fontSize: 11, color: '#667383' }}>x</Typography>
             <TextField
@@ -1132,33 +1144,44 @@ function SourceRegionPanel({
               value={matrixRows}
               onChange={(event) => setMatrixRows(Math.max(1, Math.min(32, Number(event.target.value) || 1)))}
               slotProps={{ input: { inputProps: { min: 1, max: 32, step: 1 } } }}
-              sx={{ width: 54, '& .MuiInputBase-input': { py: 0.35, px: 0.75, fontSize: 12 } }}
+              sx={toolbarNumberFieldSx}
             />
           </Box>
-          <Tooltip title="Pan">
-            <Box sx={{ display: 'inline-flex' }}>
-              <EditorToolbarButton icon={<PanToolIcon />} label="Pan" active={panMode} onClick={() => setPanMode((current) => !current)} />
-            </Box>
-          </Tooltip>
-          <Tooltip title="Zoom out">
-            <Box sx={{ display: 'inline-flex' }}>
-              <EditorToolbarButton icon={<RemoveIcon />} label="Zoom out" onClick={() => updateZoom(zoom - 0.25)} />
-            </Box>
-          </Tooltip>
-          <Typography sx={{ width: 56, textAlign: 'center', fontSize: 11, color: '#8b949e' }}>{Math.round(zoom * 100)}%</Typography>
-          <Tooltip title="Zoom in">
-            <Box sx={{ display: 'inline-flex' }}>
-              <EditorToolbarButton icon={<AddIcon />} label="Zoom in" onClick={() => updateZoom(zoom + 0.25)} />
-            </Box>
-          </Tooltip>
-          <Tooltip title="Fit to view">
-            <Box sx={{ display: 'inline-flex' }}>
-              <EditorToolbarButton icon={<FitScreenIcon />} label="Fit to view" onClick={fitToView} />
-            </Box>
-          </Tooltip>
+
+          <EditorToolbarSeparator />
+
+          <Box sx={{ display: 'flex' }}>
+            <Tooltip title="Pan">
+              <Box sx={{ display: 'inline-flex' }}>
+                <EditorToolbarButton icon={<PanToolIcon />} label="Pan" active={panMode} onClick={() => setPanMode((current) => !current)} />
+              </Box>
+            </Tooltip>
+          </Box>
+
+          <EditorToolbarSeparator />
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+            <Tooltip title="Zoom out">
+              <Box sx={{ display: 'inline-flex' }}>
+                <EditorToolbarButton icon={<RemoveIcon />} label="Zoom out" onClick={() => updateZoom(zoom - 0.25)} />
+              </Box>
+            </Tooltip>
+            <EditorToolbarLabel text={`${Math.round(zoom * 100)}%`} width={72} />
+            <Tooltip title="Zoom in">
+              <Box sx={{ display: 'inline-flex' }}>
+                <EditorToolbarButton icon={<AddIcon />} label="Zoom in" onClick={() => updateZoom(zoom + 0.25)} />
+              </Box>
+            </Tooltip>
+            <Tooltip title="Fit to view">
+              <Box sx={{ display: 'inline-flex' }}>
+                <EditorToolbarButton icon={<FitScreenIcon />} label="Fit to view" onClick={fitToView} />
+              </Box>
+            </Tooltip>
+          </Box>
+
           {!hideAssignButton ? (
             <>
-              <Box sx={{ width: 8, flexShrink: 0 }} />
+              <EditorToolbarSeparator />
               <Tooltip title="Assign selected">
                 <Box sx={{ display: 'inline-flex' }}>
                   <EditorToolbarButton icon={<AdjustIcon />} label="Assign selected" disabled={assignDisabled || selectedTileIds.length === 0} onClick={onAssignSelected} />
@@ -1171,12 +1194,13 @@ function SourceRegionPanel({
       <Box
         ref={viewportRef}
         onWheel={handleWheel}
+        onContextMenu={(event) => event.preventDefault()}
         onMouseUp={handleMouseUp}
         onMouseLeave={() => {
           setHoverAnchor(null)
           handleMouseUp()
         }}
-        sx={{ width: '100%', overflow: 'hidden', height: 560, position: 'relative', ...previewPatternSx }}
+        sx={{ width: '100%', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative', ...previewPatternSx }}
       >
         <Box
           onClick={handleClick}
@@ -1190,10 +1214,17 @@ function SourceRegionPanel({
             height: imageHeight,
             transform: `scale(${zoom})`,
             transformOrigin: 'top left',
-            cursor: panMode ? (panning ? 'grabbing' : 'grab') : isPickingAnimationFrame ? 'copy' : 'crosshair',
+            cursor: panning || matrixDragging ? 'grabbing' : panMode ? 'grab' : isPickingAnimationFrame ? 'copy' : 'crosshair',
           }}
         >
-          <Box component="img" ref={imageRef} src={imageUrl} sx={{ display: 'block', width: imageWidth, height: imageHeight, imageRendering: 'pixelated' }} />
+          <Box
+            component="img"
+            ref={imageRef}
+            src={imageUrl}
+            draggable={false}
+            onDragStart={(event) => event.preventDefault()}
+            sx={{ display: 'block', width: imageWidth, height: imageHeight, imageRendering: 'pixelated' }}
+          />
           {hoverAnchor ? (
             <Box
               sx={{
@@ -3220,6 +3251,31 @@ const previewPatternSx = {
   `,
   backgroundSize: '12px 12px',
   backgroundPosition: '0 0, 0 6px, 6px -6px, -6px 0px',
+} as const
+
+const toolbarNumberFieldSx = {
+  width: 54,
+  '& .MuiOutlinedInput-root': {
+    height: 40,
+    borderRadius: '8px',
+    background: '#111923',
+    color: '#d6dee8',
+    '& fieldset': {
+      borderColor: 'rgba(255,255,255,0.12)',
+    },
+    '&:hover fieldset': {
+      borderColor: 'rgba(255,255,255,0.12)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: 'rgba(255,255,255,0.12)',
+    },
+  },
+  '& .MuiInputBase-input': {
+    py: 0,
+    px: 1,
+    fontSize: 12,
+    textAlign: 'center',
+  },
 } as const
 
 function pixelModeButtonSx(active: boolean) {

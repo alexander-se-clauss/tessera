@@ -205,8 +205,8 @@ export function ConfigurePlayerDialog({
         </>
       }
     >
-      <Box sx={{ px: 4, py: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.38fr) minmax(380px, 0.92fr)' }, gap: 3, minHeight: 0, overflow: 'hidden', flex: 1 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.38fr) minmax(380px, 0.92fr)' }, minHeight: 0, overflow: 'hidden', flex: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0, px: 4, py: 3 }}>
           <PlayerPreviewPanel
             frame={selectedSprite?.previewFrame ?? null}
             collisionBox={{
@@ -224,7 +224,7 @@ export function ConfigurePlayerDialog({
           />
         </Box>
 
-        <Box sx={{ minHeight: 0, overflowY: 'auto', pr: 0.5 }}>
+        <Box sx={{ minHeight: 0, overflowY: 'auto', px: 4, py: 3, borderLeft: { xs: 0, lg: '1px solid rgba(255,255,255,0.07)' } }}>
           <PlayerInspectorPanel
             sprites={spriteOptions}
             spriteId={spriteId}

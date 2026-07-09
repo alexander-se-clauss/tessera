@@ -14,9 +14,6 @@ export function SpriteSelectControl({ sprites, value, onChange }: SpriteSelectCo
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Typography sx={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(220,230,245,0.42)' }}>
-        Sprite
-      </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
         <Typography sx={{ fontSize: 13, fontWeight: 500, color: 'rgba(220,230,245,0.72)' }}>
           Player sprite

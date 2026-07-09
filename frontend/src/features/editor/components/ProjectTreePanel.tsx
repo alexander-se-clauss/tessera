@@ -75,12 +75,9 @@ export function ProjectTreePanel({
       {project ? (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2.25, pt: 2, pb: 1 }}>
           <Typography
+            variant="overline"
             sx={{
-              fontSize: 11,
-              fontWeight: 700,
               color: '#8f9baa',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
               minWidth: 0,
               pr: 1,
             }}
@@ -123,7 +120,7 @@ export function ProjectTreePanel({
 
       <Box sx={{ flex: 1, px: 1.5, pb: 1.5, overflowY: 'auto', pt: project ? 0 : 1 }}>
         {!project || (mapGroups.length === 0 && maps.length === 0) ? (
-          <Typography sx={{ px: 1.25, py: 1, fontSize: 12, color: '#667383' }}>
+          <Typography variant="body2" sx={{ px: 1.25, py: 1, color: '#667383' }}>
             No data
           </Typography>
         ) : (
@@ -152,9 +149,9 @@ export function ProjectTreePanel({
                         indent={2.75}
                         onClick={() => onSelectMap(map.id)}
                       />
-                    ))}
+                  ))}
                   {isExpanded && groupMaps.length === 0 && (
-                    <Typography sx={{ pl: 2.75, py: 0.5, fontSize: 11, color: 'rgba(220,230,245,0.28)' }}>
+                    <Typography variant="body2" sx={{ pl: 2.75, py: 0.5, color: 'rgba(220,230,245,0.28)' }}>
                       No maps
                     </Typography>
                   )}
@@ -226,9 +223,8 @@ function GroupHeader({
         mt: 0.5,
         borderRadius: '6px',
         cursor: 'pointer',
-        background: active ? 'rgba(77,156,255,0.12)' : 'transparent',
-        borderLeft: active ? '2px solid #4d9cff' : '2px solid transparent',
-        '&:hover': { bgcolor: active ? 'rgba(77,156,255,0.15)' : 'rgba(255,255,255,0.045)' },
+        background: active ? 'action.selected' : 'transparent',
+        '&:hover': { bgcolor: active ? 'action.selected' : 'action.hover' },
       }}
     >
       <Box
@@ -239,14 +235,12 @@ function GroupHeader({
       </Box>
       {icon}
       <Typography
+        variant="body2"
         onClick={onOpenEditor}
         sx={{
-          fontSize: 13,
-          fontFamily: 'inherit',
           flex: 1,
           minWidth: 0,
-          fontWeight: active ? 600 : 500,
-          color: active ? '#d6dee8' : '#8f9baa',
+          color: active ? 'text.primary' : 'text.secondary',
         }}
         noWrap
       >
@@ -258,7 +252,7 @@ function GroupHeader({
         </Tooltip>
       )}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, ml: 'auto', flexShrink: 0 }}>
-        <Typography sx={{ fontSize: 11, color: '#667383', px: 0.5 }}>{mapCount}</Typography>
+        <Typography variant="body2" sx={{ color: '#667383', px: 0.5 }}>{mapCount}</Typography>
         <Tooltip title="Add map to group">
           <IconButton
             size="small"
@@ -299,8 +293,7 @@ function UngroupedHeader({
         mt: 0.5,
         borderRadius: '6px',
         cursor: 'pointer',
-        '&:hover': { bgcolor: 'rgba(255,255,255,0.045)' },
-        borderLeft: '2px solid transparent',
+        '&:hover': { bgcolor: 'action.hover' },
       }}
     >
       {expanded ? (
@@ -309,10 +302,10 @@ function UngroupedHeader({
         <ChevronRightIcon sx={{ fontSize: 14, color: '#667383', flexShrink: 0 }} />
       )}
       <FolderOpenIcon sx={{ fontSize: 12, color: '#667383', flexShrink: 0 }} />
-      <Typography sx={{ fontSize: 13, fontFamily: 'inherit', flex: 1, minWidth: 0, color: '#8f9baa' }} noWrap>
+      <Typography variant="body2" sx={{ flex: 1, minWidth: 0, color: '#8f9baa' }} noWrap>
         Ungrouped
       </Typography>
-      <Typography sx={{ fontSize: 11, color: '#667383', px: 0.5 }}>{count}</Typography>
+      <Typography variant="body2" sx={{ color: '#667383', px: 0.5 }}>{count}</Typography>
     </Box>
   )
 }
@@ -340,19 +333,16 @@ function MapTreeItem({
         py: 0.75,
         borderRadius: '6px',
         cursor: 'pointer',
-        fontSize: 13,
-        color: selected ? '#d6dee8' : '#8f9baa',
-        background: selected ? 'rgba(77,156,255,0.12)' : 'transparent',
-        borderLeft: selected ? '2px solid #4d9cff' : '2px solid transparent',
-        fontWeight: selected ? 600 : 400,
+        color: selected ? 'text.primary' : 'text.secondary',
+        background: selected ? 'action.selected' : 'transparent',
         '&:hover': {
-          bgcolor: selected ? 'rgba(77,156,255,0.15)' : 'rgba(255,255,255,0.045)',
-          color: '#d6dee8',
+          bgcolor: selected ? 'action.selected' : 'action.hover',
+          color: 'text.primary',
         },
       }}
     >
       <MapIcon sx={{ fontSize: 12, opacity: 0.6, flexShrink: 0 }} />
-      <Typography sx={{ fontSize: 13, fontFamily: 'inherit', flex: 1, minWidth: 0 }} noWrap>
+      <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
         {map.name}
       </Typography>
     </Box>
