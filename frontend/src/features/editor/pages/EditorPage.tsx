@@ -398,11 +398,11 @@ export function EditorPage() {
     setEditingTileset(null)
   }
 
-  const handleCreateEditorTileset = async (payload: { name: string; tileWidth: number; tileHeight: number }) => {
+  const handleCreateEditorTileset = async (payload: { name: string; type: 'background' | 'object'; tileWidth: number; tileHeight: number }) => {
     if (!activeProjectId) return
     const tileset = await createTileset({
       projectId: activeProjectId,
-      body: { name: payload.name, tileWidth: payload.tileWidth, tileHeight: payload.tileHeight },
+      body: { name: payload.name, type: payload.type, tileWidth: payload.tileWidth, tileHeight: payload.tileHeight },
     }).unwrap()
     dispatch(setActiveTilesetId(tileset.id))
     setEditingTileset(null)
