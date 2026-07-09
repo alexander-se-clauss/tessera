@@ -82,6 +82,7 @@ export type TilesetOrganizeCollisionStepProps = {
   sourceGridW?: number
   sourceGridH?: number
   importWorkspace?: boolean
+  hasTargetTileset?: boolean
   sourceToolbarContent?: ReactNode
   targetSelector?: ReactNode
   crossTilesetTargets?: Array<{ tilesetId: number; tilesetName: string; groups: Array<{ id: string; name: string; width: number; height: number }> }>

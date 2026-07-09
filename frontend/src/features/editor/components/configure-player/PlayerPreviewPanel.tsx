@@ -48,20 +48,12 @@ export function PlayerPreviewPanel({ frame, collisionBox, showGrid, onToggleGrid
   return (
     <Box
       sx={{
-        borderRadius: 3,
-        p: 2,
-        background: 'linear-gradient(180deg, rgba(22,28,38,0.74), rgba(15,21,30,0.68))',
-        border: '1px solid rgba(255,255,255,0.05)',
-        boxShadow: '0 18px 50px rgba(0,0,0,0.22)',
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-        <Typography sx={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(220,230,245,0.42)' }}>
-          Preview
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{

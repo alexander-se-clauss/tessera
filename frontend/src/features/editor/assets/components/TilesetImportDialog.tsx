@@ -1,13 +1,13 @@
-import { Alert, Box, Button, FormControl, MenuItem, Select, Typography } from '@mui/material'
+import { Alert, Box, ButtonBase, MenuItem, Select, Typography } from '@mui/material'
 import { useEffect } from 'react'
 import { AppDialog } from '../../components/AppDialog'
+import { EditorToolbarSegment } from '../../components/EditorToolbar'
 import { useAssignTileToTilesetGroupMutation } from '../../api/editorApi'
 import { TargetSelector } from './TargetSelector'
 import { TilesetOrganizeCollisionStep } from './TilesetOrganizeCollisionStep'
 import { slotForTileIndex } from './tilesetImportUtils'
 import type { TilesetImportDialogProps } from './types'
 import { useTilesetImport } from './useTilesetImport'
-import { editorTokens } from '../../../../app/theme'
 
 export function TilesetImportDialog(props: TilesetImportDialogProps) {
   const {
@@ -64,7 +64,7 @@ export function TilesetImportDialog(props: TilesetImportDialogProps) {
     void handleUpload()
   }, [handleUpload, props.open, selectedDestinationTilesetId, step])
 
-  const handleAssignSelectedTiles = () => {
+  const handleAssignSelectedTiles = async () => {
     if (!activeGroup || !selectedDestinationTilesetId || !file || organizeSelectedTileIds.length === 0) {
       handleAssignSelectedToGroup()
       return
@@ -84,32 +84,33 @@ export function TilesetImportDialog(props: TilesetImportDialogProps) {
       const occurrence = tile.sourceOccurrences[0]
       if (!occurrence) continue
       const override = tileOverrides[String(tile.id)] ?? {}
-      void assignTileToGroup({
-        projectId: props.projectId,
-        tilesetId: Number(selectedDestinationTilesetId),
-        groupId: activeGroup.id,
-        sourceImage: file,
-        tile: {
-          clientId: String(tile.id),
-          sourceX: occurrence.x + Number(override.sourceOffsetX ?? 0),
-          sourceY: occurrence.y + Number(override.sourceOffsetY ?? 0),
-          width: gridW,
-          height: gridH,
-          blockedColors: override.blockedColors ?? [],
-          deletedPixels: override.deletedPixels ?? [],
-          animated: false,
-          frames: null,
-        },
-      }).unwrap().then((updatedTileset) => {
+      try {
+        const updatedTileset = await assignTileToGroup({
+          projectId: props.projectId,
+          tilesetId: Number(selectedDestinationTilesetId),
+          groupId: activeGroup.id,
+          sourceImage: file,
+          tile: {
+            clientId: String(tile.id),
+            sourceX: occurrence.x + Number(override.sourceOffsetX ?? 0),
+            sourceY: occurrence.y + Number(override.sourceOffsetY ?? 0),
+            width: gridW,
+            height: gridH,
+            blockedColors: override.blockedColors ?? [],
+            deletedPixels: override.deletedPixels ?? [],
+            animated: false,
+            frames: null,
+          },
+        }).unwrap()
         const targetGroup = updatedTileset.groups.find((group) => String(group.id) === String(activeGroup.id))
         const assignedSlot = (targetGroup?.tiles ?? []).find((slot) => !beforeSlots.has(slot))
         if (assignedSlot) {
           beforeSlots.add(assignedSlot)
           handleCommitAssignedTileSlot(tile.id, assignedSlot, updatedTileset)
         }
-      }).catch(() => {
+      } catch {
         // The local optimistic tile remains visible for now; the dialog-level error handling can be wired to per-tile states next.
-      })
+      }
     }
   }
 
@@ -119,7 +120,7 @@ export function TilesetImportDialog(props: TilesetImportDialogProps) {
       onClose={props.onClose}
       title="Import tiles"
       height="min(900px, calc(100vh - 40px))"
-      contentSx={{ p: 0, overflow: 'hidden' }}
+      contentSx={{ p: '0 !important', pt: '0 !important', overflow: 'hidden' }}
     >
       {error && (
         <Box sx={{ px: 3, pt: 1.5, flexShrink: 0 }}>
@@ -136,6 +137,7 @@ export function TilesetImportDialog(props: TilesetImportDialogProps) {
             sourceGridW={gridW}
             sourceGridH={gridH}
             importWorkspace
+            hasTargetTileset={selectedDestinationTilesetId !== ''}
             sourceToolbarContent={
               <ImportCanvasToolbar
                 file={file}
@@ -223,54 +225,64 @@ function ImportCanvasToolbar({
 }) {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-      <Button
-        component="label"
-        size="small"
-        sx={{
-          height: editorTokens.control.heightCompact,
-          px: 1.25,
-          borderRadius: `${editorTokens.control.radius}px`,
-          border: '1px solid rgba(255,255,255,0.10)',
-          color: file ? '#d6dee8' : '#8f9baa',
-          textTransform: 'none',
-          fontSize: 12,
-          maxWidth: 180,
-          overflow: 'hidden',
-        }}
-      >
-        <Typography noWrap component="span" sx={{ fontSize: 12, maxWidth: 150 }}>
-          {file ? file.name : 'Choose PNG'}
-        </Typography>
-        <Box
-          component="input"
-          hidden
-          type="file"
-          accept=".png,image/png"
-          onChange={(event) => onSelectFile(event.target.files?.[0] ?? null)}
-        />
-      </Button>
-      <FormControl variant="standard" size="small" sx={{ minWidth: 150, maxWidth: 220 }}>
+      <EditorToolbarSegment width={180} sx={{ px: 0, overflow: 'hidden' }}>
+        <ButtonBase
+          component="label"
+          sx={{
+            width: '100%',
+            height: '100%',
+            px: 1.5,
+            justifyContent: 'flex-start',
+            color: file ? '#d6dee8' : '#8f9baa',
+          }}
+        >
+          <Typography noWrap component="span" sx={{ fontSize: 12, maxWidth: 150 }}>
+            {file ? file.name : 'Choose PNG'}
+          </Typography>
+          <Box
+            component="input"
+            hidden
+            type="file"
+            accept=".png,image/png"
+            onChange={(event) => onSelectFile(event.target.files?.[0] ?? null)}
+          />
+        </ButtonBase>
+      </EditorToolbarSegment>
+      <EditorToolbarSegment width={220} sx={{ px: 0 }}>
         <Select
           value={selectedTilesetId === '' ? '' : String(selectedTilesetId)}
           displayEmpty
+          variant="standard"
           disableUnderline
           onChange={(event) => {
             const value = event.target.value
             onSelectTileset(value === '' ? '' : Number(value))
           }}
-          sx={{
-            fontSize: 12,
-            color: '#d6dee8',
-            '& .MuiSelect-select': { py: 0.25, px: 0.5 },
-            '& .MuiSvgIcon-root': { fontSize: 16, color: '#8f9baa' },
-          }}
+          sx={topBarSelectSx}
         >
           <MenuItem value="">Select tileset</MenuItem>
           {tilesets.map((tileset) => (
             <MenuItem key={tileset.id} value={String(tileset.id)}>{tileset.name}</MenuItem>
           ))}
         </Select>
-      </FormControl>
+      </EditorToolbarSegment>
     </Box>
   )
+}
+
+const topBarSelectSx = {
+  width: '100%',
+  height: '100%',
+  color: '#8f9baa',
+  fontSize: 12,
+  '& .MuiSelect-select': {
+    py: 0,
+    px: 1.5,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  '& .MuiSvgIcon-root': {
+    fontSize: 16,
+    color: '#8f9baa',
+  },
 }

@@ -84,8 +84,6 @@ export function CenterEditor(props: CenterEditorProps) {
             flexShrink: 0,
             '& .MuiTab-root': {
               minHeight: 36,
-              fontFamily: 'monospace',
-              fontSize: 12,
               textTransform: 'none',
               color: '#8f9baa',
             },
@@ -185,8 +183,6 @@ function InlineTilesetSelector({
         maxWidth: { xs: 120, sm: 180, md: 240 },
         minWidth: 0,
         flexShrink: 1,
-        fontSize: 12,
-        fontFamily: 'monospace',
         color: '#d6dee8',
         '& .MuiSelect-select': {
           py: 0,
@@ -201,7 +197,7 @@ function InlineTilesetSelector({
     >
       <MenuItem value="">No tileset</MenuItem>
       {tilesets.map((tileset) => (
-        <MenuItem key={tileset.id} value={tileset.id} sx={{ fontSize: 12, fontFamily: 'monospace' }}>
+        <MenuItem key={tileset.id} value={tileset.id}>
           {tileset.name}
         </MenuItem>
       ))}

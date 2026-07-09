@@ -8,7 +8,7 @@ import InvertColorsIcon from '@mui/icons-material/InvertColors'
 import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
 import FitScreenIcon from '@mui/icons-material/FitScreen'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { samplePixelColor } from '../utils/colorRemoval'
 import type { SpriteFrame, SpriteState } from '../types/sprite'
@@ -21,6 +21,7 @@ import {
   EditorToolbarLabel,
   EditorToolbarSeparator,
 } from '../../components/EditorToolbar'
+import { useCanvasViewport } from '../../hooks/useCanvasViewport'
 
 type FramePickerProps = {
   imageUrl: string
@@ -28,8 +29,6 @@ type FramePickerProps = {
   baseFrameHeight: number
   imageNaturalWidth: number
   imageNaturalHeight: number
-  columns: number
-  rows: number
   states: SpriteState[]
   activeStateId: string
   selectionMode: SelectionMode
@@ -67,8 +66,6 @@ export function FramePicker({
   baseFrameHeight,
   imageNaturalWidth,
   imageNaturalHeight,
-  columns,
-  rows,
   states,
   activeStateId,
   selectionMode,
@@ -78,12 +75,24 @@ export function FramePicker({
   onRemoveFrame,
   onAddBlockedColor,
 }: FramePickerProps) {
-  const sheetContainerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
   const activeState = states.find((state) => state.id === activeStateId) ?? null
-  const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(true)
+  const {
+    viewportRef: sheetContainerRef,
+    zoom,
+    panX,
+    panY,
+    panning,
+    fitToView,
+    updateZoom,
+    clientToContentPoint,
+    startPan,
+    movePan,
+    stopPan,
+    handleWheelZoom,
+  } = useCanvasViewport({ contentWidth: imageNaturalWidth, contentHeight: imageNaturalHeight })
 
   // Keep an offscreen canvas in sync with the imageUrl for pixel sampling
   useEffect(() => {
@@ -104,10 +113,6 @@ export function FramePicker({
     }
     img.src = imageUrl
   }, [imageUrl])
-  const [panX, setPanX] = useState(0)
-  const [panY, setPanY] = useState(0)
-  const [panning, setPanning] = useState(false)
-  const [panStart, setPanStart] = useState<{ x: number; y: number; panX: number; panY: number } | null>(null)
 
   const toggleFrame = (frame: SpriteFrame) => {
     if (!activeState) {
@@ -125,72 +130,17 @@ export function FramePicker({
 
   const { start, move, end, dragRect } = useFrameSelection({
     mode: selectionMode,
-    zoom,
     baseFrameWidth,
     baseFrameHeight,
-    columns,
-    rows,
+    imageWidth: imageNaturalWidth,
+    imageHeight: imageNaturalHeight,
     onFrameSelected: toggleFrame,
   })
 
-  const clampPan = (nextX: number, nextY: number) => {
-    const viewport = sheetContainerRef.current
-    if (!viewport) {
-      return { x: nextX, y: nextY }
-    }
-
-    const scaledWidth = imageNaturalWidth * zoom
-    const scaledHeight = imageNaturalHeight * zoom
-    const minVisibleX = Math.min(viewport.clientWidth * 0.8, scaledWidth * 0.8)
-    const minVisibleY = Math.min(viewport.clientHeight * 0.8, scaledHeight * 0.8)
-
-    return {
-      x: Math.min(viewport.clientWidth - minVisibleX, Math.max(minVisibleX - scaledWidth, nextX)),
-      y: Math.min(viewport.clientHeight - minVisibleY, Math.max(minVisibleY - scaledHeight, nextY)),
-    }
-  }
-
-  const zoomFit = useCallback(() => {
-    const viewport = sheetContainerRef.current
-    if (!viewport || imageNaturalWidth === 0) {
-      return
-    }
-
-    const fittedZoom = Math.max(0.25, Math.min(8, (viewport.clientWidth * 0.9) / imageNaturalWidth))
-    setZoom(fittedZoom)
-    setPanX((viewport.clientWidth - imageNaturalWidth * fittedZoom) / 2)
-    setPanY((viewport.clientHeight - imageNaturalHeight * fittedZoom) / 2)
-  }, [imageNaturalHeight, imageNaturalWidth])
-
-  useEffect(() => {
-    zoomFit()
-  }, [zoomFit])
-
-  const updateZoom = (nextZoom: number) => {
-    const viewport = sheetContainerRef.current
-    if (!viewport) {
-      return
-    }
-
-    const clampedZoom = Math.min(8, Math.max(0.25, nextZoom))
-    const centerX = viewport.clientWidth / 2
-    const centerY = viewport.clientHeight / 2
-    const imageX = (centerX - panX) / zoom
-    const imageY = (centerY - panY) / zoom
-    const nextPan = clampPan(centerX - imageX * clampedZoom, centerY - imageY * clampedZoom)
-    setZoom(clampedZoom)
-    setPanX(nextPan.x)
-    setPanY(nextPan.y)
-  }
-
   const getLocalPoint = (event: React.MouseEvent | React.WheelEvent) => {
-    const rect = sheetContainerRef.current?.getBoundingClientRect()
-    if (!rect) {
-      return null
-    }
-
-    const x = (event.clientX - rect.left - panX) / zoom
-    const y = (event.clientY - rect.top - panY) / zoom
+    const point = clientToContentPoint(event.clientX, event.clientY)
+    if (!point) return null
+    const { x, y } = point
     if (x < 0 || y < 0 || x > imageNaturalWidth || y > imageNaturalHeight) {
       return null
     }
@@ -198,9 +148,8 @@ export function FramePicker({
   }
 
   const handleMouseDown = (event: React.MouseEvent) => {
-    if (selectionMode === 'pan') {
-      setPanning(true)
-      setPanStart({ x: event.clientX, y: event.clientY, panX, panY })
+    if (selectionMode === 'pan' || event.button === 2) {
+      startPan(event)
       return
     }
 
@@ -217,40 +166,24 @@ export function FramePicker({
 
     const local = getLocalPoint(event)
     if (local) {
-      start({ x: local.x * zoom, y: local.y * zoom })
+      start({ x: local.x, y: local.y })
     }
   }
 
   const handleMouseMove = (event: React.MouseEvent) => {
-    if (selectionMode === 'pan' && panStart) {
-      const nextPan = clampPan(panStart.panX + (event.clientX - panStart.x), panStart.panY + (event.clientY - panStart.y))
-      setPanX(nextPan.x)
-      setPanY(nextPan.y)
+    if (movePan(event)) {
       return
     }
 
     const local = getLocalPoint(event)
     if (local) {
-      move({ x: local.x * zoom, y: local.y * zoom })
+      move({ x: local.x, y: local.y })
     }
   }
 
   const handleMouseUp = () => {
-    setPanning(false)
-    setPanStart(null)
+    stopPan()
     end()
-  }
-
-  const handleWheel = (event: React.WheelEvent) => {
-    if (event.ctrlKey) {
-      event.preventDefault()
-      updateZoom(zoom + (event.deltaY < 0 ? 0.25 : -0.25))
-      return
-    }
-
-    const nextPan = clampPan(panX - event.deltaX, panY - event.deltaY)
-    setPanX(nextPan.x)
-    setPanY(nextPan.y)
   }
 
   const allFrameOverlays = useMemo(
@@ -263,7 +196,10 @@ export function FramePicker({
           return (
             <Box
               key={`${state.id}-${index}`}
-              onClick={() => {
+              onMouseDown={(event) => event.stopPropagation()}
+              onMouseUp={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation()
                 if (active) {
                   onRemoveFrame(state.id, index)
                 }
@@ -363,7 +299,7 @@ export function FramePicker({
           </Tooltip>
           <Tooltip title="Fit to view">
             <Box sx={{ display: 'inline-flex' }}>
-              <EditorToolbarButton icon={<FitScreenIcon />} label="Fit to view" onClick={zoomFit} />
+              <EditorToolbarButton icon={<FitScreenIcon />} label="Fit to view" onClick={fitToView} />
             </Box>
           </Tooltip>
         </Box>
@@ -378,7 +314,7 @@ export function FramePicker({
           minHeight: 0,
           overflow: 'hidden',
           position: 'relative',
-          cursor: selectionMode === 'pan' ? (panning ? 'grabbing' : 'grab') : 'crosshair',
+          cursor: panning ? 'grabbing' : selectionMode === 'pan' ? 'grab' : selectionMode === 'eyedropper' ? 'copy' : 'crosshair',
           background: '#080c12',
           backgroundImage: `
             linear-gradient(45deg, rgba(255,255,255,0.018) 25%, transparent 25%),
@@ -396,7 +332,8 @@ export function FramePicker({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
+        onWheel={handleWheelZoom}
+        onContextMenu={(event) => event.preventDefault()}
       >
         {showGrid && (
           <Box

@@ -69,8 +69,8 @@ export function getSpriteFrameSourceRect(
     frame.pixelH !== undefined
   ) {
     return {
-      x: frame.pixelX,
-      y: frame.pixelY,
+      x: frame.pixelX + frame.offsetX,
+      y: frame.pixelY + frame.offsetY,
       width: frame.pixelW,
       height: frame.pixelH,
     }
